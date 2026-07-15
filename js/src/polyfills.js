@@ -1,6 +1,10 @@
 // QuickJS (Javy) lacks structuredClone; flint-chart calls it on plain data
 // (objects, arrays, primitives, Dates). Guarded so Node keeps its native
 // implementation — the Go parity test then verifies the two agree.
+// Caveats: no cycle handling (recursion overflows on circular structures);
+// fails open on unsupported types (plain-object clone where native
+// structuredClone throws DataCloneError) and duplicates shared references;
+// see SPIKE-RESULTS.md Notes.
 if (typeof globalThis.structuredClone !== "function") {
   globalThis.structuredClone = function deepClone(v) {
     if (v === null || typeof v !== "object") return v;

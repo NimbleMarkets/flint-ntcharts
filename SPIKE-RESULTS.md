@@ -5,9 +5,9 @@
 | Metric | Value | Gate |
 | --- | --- | --- |
 | Fixtures parity-passing | 5 / 5 | 5 / 5 |
-| Per-compile latency | 8.25 ms (8,250,012 ns/op, mean of 10 runs) | < 250 ms |
-| flint.wasm size | 3,292,520 bytes (≈ 3.14 MB) | informational |
-| JS bundle size | 710,901 bytes (≈ 694.2 KB per esbuild's own report) | informational |
+| Per-compile latency | 8.25 ms (8,250,012 ns/op, 10 iterations, single benchmark run) | < 250 ms |
+| flint.wasm size | 3,292,520 bytes (3.14 MiB / 3.29 MB) | informational |
+| JS bundle size | 710,901 bytes (694.2 KiB / 710.9 KB per esbuild's own report) | informational |
 | Javy version | v9.0.0 | — |
 | QuickJS-risk audit hits (Intl/toLocale/etc.) | Intl. : 0; structuredClone: 2 (fixed, see below); toLocaleString: 5; toLocaleDateString: 4; toLocaleTimeString: 0; WeakRef: 0; FinalizationRegistry: 0 | informational |
 

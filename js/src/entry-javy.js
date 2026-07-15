@@ -1,3 +1,4 @@
+import "./polyfills.js";
 import { compileToVegaLite } from "./compile.js";
 
 // Javy exposes Javy.IO for WASI stdin/stdout access.

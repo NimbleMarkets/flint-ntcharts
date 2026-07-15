@@ -1,0 +1,15 @@
+{
+  "data": { "values": [
+    {"quarter": "Q1", "region": "EMEA", "sales": 320},
+    {"quarter": "Q1", "region": "APAC", "sales": 210},
+    {"quarter": "Q2", "region": "EMEA", "sales": 380},
+    {"quarter": "Q2", "region": "APAC", "sales": 260},
+    {"quarter": "Q3", "region": "EMEA", "sales": 295},
+    {"quarter": "Q3", "region": "APAC", "sales": 310}
+  ]},
+  "chart_spec": {
+    "chartType": "Stacked Bar Chart",
+    "encodings": {"x": {"field": "quarter"}, "y": {"field": "sales"}, "color": {"field": "region"}},
+    "baseSize": {"width": 400, "height": 300}
+  }
+}

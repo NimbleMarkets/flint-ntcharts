@@ -1,0 +1,15 @@
+{
+  "name": "@nimblemarkets/flint-ntcharts-spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/entry-javy.js --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/flint-javy.js",
+    "gen-expected": "node scripts/node-runner.mjs"
+  },
+  "dependencies": {
+    "flint-chart": "^0.2.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
+  }
+}

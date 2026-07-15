@@ -45,3 +45,22 @@ func TestParityWithNode(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkCompileScatter(b *testing.B) {
+	ctx := context.Background()
+	r, err := NewRunner(ctx)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer r.Close(ctx)
+	input, err := os.ReadFile(filepath.Join("..", "testdata", "fixtures", "scatter.json"))
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := r.CompileVegaLite(ctx, input); err != nil {
+			b.Fatal(err)
+		}
+	}
+}

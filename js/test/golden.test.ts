@@ -38,3 +38,28 @@ describe("bar: group channel splits series correctly", () => {
     expect(west.values!.map((p: any) => p.y)).toEqual([30, 40]);
   });
 });
+
+describe("golden: stacked-bar", () => {
+  it("emits a multi-series stacked bar spec", () => {
+    const out = assembleFixture("stacked-bar");
+    expect(out.type).toBe("bar");
+    expect(out.options?.stacked).toBe(true);
+    expect(out.data.series.length).toBe(2);
+    expect(out.data.series.map((s: any) => s.name).sort()).toEqual(["APAC", "EMEA"]);
+    expect(out.data.series[0].color).toMatch(/^#[0-9a-f]{6}$/);
+    expectGolden("stacked-bar", out);
+  });
+});
+
+describe("golden: line-temporal", () => {
+  it("emits a timeseries spec with ms X values and a time format", () => {
+    const out = assembleFixture("line-temporal");
+    expect(out.type).toBe("timeseries");
+    const xs = out.data.series[0].values!.map((p: any) => p.x);
+    for (const x of xs) expect(typeof x).toBe("number"); // ms since epoch
+    expect(xs[0]).toBeGreaterThan(1.7e12);
+    expect(out.x_axis?.format?.kind).toBe("time");
+    expect(out.x_axis?.format?.layout).not.toMatch(/%/); // fully translated Go layout
+    expectGolden("line-temporal", out);
+  });
+});

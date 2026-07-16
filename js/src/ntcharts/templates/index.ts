@@ -1,5 +1,7 @@
 import type { ChartTemplateDef } from "flint-chart";
 import { ntBarChartDef } from "./bar.js";
+import { ntStackedBarChartDef } from "./stacked-bar.js";
+import { ntLineChartDef } from "./line.js";
 
 const defs: ChartTemplateDef[] = [];
 
@@ -11,3 +13,5 @@ export function ntSupportedChartTypes(): string[] { return defs.map((d) => d.cha
 export function ntRegister(def: ChartTemplateDef): void { defs.push(def); }
 
 ntRegister(ntBarChartDef);
+ntRegister(ntStackedBarChartDef);
+ntRegister(ntLineChartDef);

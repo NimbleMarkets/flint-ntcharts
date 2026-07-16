@@ -57,9 +57,18 @@ hands off to a per-chart-type template (`js/src/ntcharts/templates/`) that fills
 
 - Bar Chart
 - Stacked Bar Chart
-- Line Chart / Timeseries Line Chart
+- Line Chart
 - Scatter Plot
 - Heatmap
+
+Only **"Line Chart"** is a registered `chartType` name in the template registry
+(`js/src/ntcharts/templates/index.ts`) — there is no separate "Timeseries Line Chart" entry.
+`"timeseries"` is instead an **emitted** `NtSpec.type` value: the Line Chart template
+(`js/src/ntcharts/templates/line.ts`) inspects the resolved X-channel semantics and sets
+`emit.type = "timeseries"` when X is temporal, `"line"` otherwise. Feed it a quantitative
+(non-temporal) X field and the same `"Line Chart"` chartType emits `type: "line"` — see the
+`line-numeric` fixture/golden under `testdata/fixtures-terminal/` and
+`testdata/ntspec-golden-terminal/`.
 
 **Grouped Bar Chart is intentionally unsupported.** ntcharts' terminal `barchart.Model` can only
 render stacked segments within a bar, not side-by-side groups, so a multi-series `Spec` with
@@ -74,6 +83,17 @@ an optional canvas-size ceiling from the chart spec; `deriveStretchCapsShim` der
 `maxStretchX`/`maxStretchY` from the same ceiling so flint-chart's shared layout math stretches
 plot regions in cell units. The resulting `layout.subplotWidth` / `subplotHeight` become the
 emitted `NtSpec.width` / `height` (each floored at a minimum of 8x4 cells).
+
+**Default stretch cap is 1 (no growth beyond the base size).** `TERMINAL_OPTIONS.maxStretch`
+(`js/src/ntcharts/assemble.ts`) is `1`: when a chart spec sets no `canvasSize` ceiling,
+`deriveStretchCapsShim`'s no-ceiling fallback uses this value, so the emitted chart never
+exceeds the requested/default `baseSize` (terminal cells are a fixed budget, not a freely
+growable canvas). To explicitly allow growth beyond `baseSize`, set `chart_spec.canvasSize`
+larger than `baseSize` (or larger than the 64x20 default when `baseSize` is omitted) — the
+per-dimension caps `maxStretchX`/`maxStretchY` are then derived from `canvasSize / baseSize`
+instead of the `maxStretch` fallback. See `testdata/fixtures-terminal/` /
+`testdata/ntspec-golden-terminal/` for goldens that exercise the default (no-ceiling, capped at
+the 64x20 base) path.
 
 ### Format translation (d3 → Go)
 
@@ -101,10 +121,11 @@ cd js && npx vitest run
 ### Cross-validating against the real Go renderer
 
 `speccheck/speccheck_test.go` proves the *other* end of the pipeline: every golden JSON file
-emitted by the TS backend (`testdata/ntspec-golden/*.json`) unmarshals into ntcharts'
-`spec.Spec`, passes `Validate()`, `Build()`s into a concrete terminal model, and renders a
-non-empty `View()`. This is the full flint → TS backend → JSON → Go render contract check, run
-from Go:
+emitted by the TS backend — both `testdata/ntspec-golden/*.json` (pixel-scale fixtures, an
+explicit `baseSize`) and `testdata/ntspec-golden-terminal/*.json` (terminal-scale fixtures, no
+`baseSize`, so `DEFAULT_TERMINAL_BASE` 64x20 applies) — unmarshals into ntcharts' `spec.Spec`,
+passes `Validate()`, `Build()`s into a concrete terminal model, and renders a non-empty
+`View()`. This is the full flint → TS backend → JSON → Go render contract check, run from Go:
 
 ```sh
 go test ./speccheck/...
@@ -116,8 +137,10 @@ It requires a local checkout of the `spec` branch of
 
 ### Regenerating the ntcharts-spec goldens
 
-The goldens live under `testdata/ntspec-golden/` and are produced by `assembleNtcharts` in the
-vitest suite. To regenerate them after a template or format change:
+The goldens live under `testdata/ntspec-golden/` (pixel-scale, from `testdata/fixtures/`) and
+`testdata/ntspec-golden-terminal/` (terminal-scale, from `testdata/fixtures-terminal/`), and are
+produced by `assembleNtcharts` in the vitest suite. To regenerate them after a template or
+format change:
 
 ```sh
 cd js && UPDATE_GOLDEN=1 npx vitest run
@@ -126,3 +149,12 @@ cd js && UPDATE_GOLDEN=1 npx vitest run
 Goldens additionally carry private `_warnings` / `_width` / `_height` keys (assembly metadata,
 not part of the ntcharts-spec schema); the Go side ignores unknown JSON fields, so these are
 left in place rather than stripped.
+
+### Known gaps
+
+- **`chart_spec.chartProperties` passes through unvalidated.** Unlike upstream flint-chart,
+  this backend does not shim `normalizeChartProperties`: property-driven overrides that
+  upstream derives from normalized chartProperties (e.g. `includeZero_x`, `logScale_x`) are
+  **not applied** here. See the "Deviations" note at the top of `js/src/ntcharts/shims.ts` for
+  the full list of intentionally-unshimmed/unimplemented upstream utilities
+  (`normalizeChartProperties`, `computeMinSubplotDimensions`, `decideColorMaps`).

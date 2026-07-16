@@ -35,6 +35,13 @@ export interface NtOHLCPoint { t: unknown; o: number; h: number; l: number; c: n
 export interface NtSeries {
   name: string;
   type?: string;
+  // Deliberate optionality exception: the Go struct's `Values []DataPoint`
+  // field always serializes (Go's zero value for a nil slice marshals as
+  // `null`/`[]`, never omitted), but this TS type marks `values` optional
+  // so a series with no point data (e.g. an OHLC-only series, see `ohlc`
+  // below) can omit the key entirely rather than emit `values: []`/`null`.
+  // Producers that mean to emit an empty series should still set `[]`
+  // explicitly; `undefined` here should be reserved for "not applicable".
   values?: NtDataPoint[];
   ohlc?: NtOHLCPoint[];
   color?: string;

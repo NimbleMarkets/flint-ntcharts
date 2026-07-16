@@ -2,6 +2,17 @@
 // not exported from the npm package (applyAggregation, resolveBaseSize,
 // deriveStretchCaps). Semantics documented from the upstream source; if an
 // upstream release exports them, delete this module and import instead.
+//
+// Deviations (intentionally not shimmed / not implemented here):
+//   - normalizeChartProperties is NOT shimmed. `chart_spec.chartProperties`
+//     passes through this backend unvalidated: property-driven overrides
+//     that upstream applies from normalized chartProperties (e.g.
+//     includeZero_x, logScale_x) are NOT applied by assembleNtcharts.
+//   - computeMinSubplotDimensions is out of scope (facet layout is not
+//     supported by this terminal backend) and intentionally unimplemented.
+//   - decideColorMaps is intentionally unimplemented; superseded here by
+//     this package's own colormap.ts (gradientForScheme / palette
+//     selection), which serves the terminal ntcharts-spec color needs.
 import type { ChartEncoding } from "flint-chart";
 
 export interface Size { width: number; height: number; }
@@ -43,6 +54,16 @@ const AGGS: Record<string, (vals: number[]) => number> = {
 // applyAggregationShim mirrors upstream core/aggregate.ts behavior: when any
 // encoding declares `aggregate`, group rows by every OTHER encoded field and
 // collapse each aggregate-encoded field with its function.
+//
+// Divergence from upstream: this shim derives a fresh output row per group
+// (`{ ...bucket[0], [field]: aggregated }`), rather than aggregating
+// in-place over the original row array the way upstream's implementation is
+// documented to. It also has no special empty-bucket handling — every
+// group here is built from at least one matching row (groups come from
+// `Map` entries populated while iterating `rows`), so an empty bucket
+// cannot occur in this shim; upstream's behavior for a genuinely empty
+// aggregate bucket (e.g. a declared category with zero matching rows) is
+// unverified against this implementation.
 export function applyAggregationShim(
   encodings: Record<string, ChartEncoding | undefined>, rows: Row[],
 ): Row[] {

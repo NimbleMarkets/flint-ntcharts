@@ -2,6 +2,10 @@
   "name": "@nimblemarkets/flint-ntcharts",
   "private": true,
   "type": "module",
+  "// exports": "placeholder for the future ntcharts-spec backend entry point; not published yet (private: true) -- revisit exports/main when this package is prepared for npm publish",
+  "exports": {
+    ".": "./src/ntcharts/index.ts"
+  },
   "scripts": {
     "build": "esbuild src/entry-javy.js --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/flint-javy.js",
     "gen-expected": "node scripts/node-runner.mjs",

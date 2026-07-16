@@ -1,4 +1,5 @@
 javy: javy 9.0.0
 flint-chart: 0.2.1
-bundle-sha256: 16f7eddaad3bc03e4df99fb1d3cb9653b637fe43735bf01c2eaed523fc8d4dbe
-bundle-bytes: 675065
+bundle-sha256: 783631d9be839b99ca816ec3aeb06c284240a96f3e53f982bc9af52f979a9cc2
+bundle-bytes: 675508
+wasm-sha256: 537c886e481ebbd852e9836b2089a5ea2eb60ce07dfba7c4add797cda1fc5cc8

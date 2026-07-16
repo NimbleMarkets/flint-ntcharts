@@ -22,4 +22,13 @@ describe("compileToNtSpec envelope", () => {
     expect(a).toBe(b);
     expect(a).not.toContain("\n");
   });
+  it("returns an error envelope for an unknown chart type instead of throwing", () => {
+    const input = JSON.stringify({
+      data: { values: [{ a: 1 }] },
+      chart_spec: { chartType: "Rose Chart", encodings: { x: { field: "a" } } },
+    });
+    const out = JSON.parse(compileToNtSpec(input));
+    expect(Object.keys(out)).toEqual(["error"]);
+    expect(out.error.message).toMatch(/Unknown chart type/);
+  });
 });

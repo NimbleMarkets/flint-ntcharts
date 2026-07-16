@@ -23,11 +23,12 @@ endif
 wasm: $(JAVY)
 	cd js && npm run build
 	$(JAVY) build -o compile/flint.wasm js/dist/flint-javy.js
-	@printf 'javy: %s\nflint-chart: %s\nbundle-sha256: %s\nbundle-bytes: %s\n' \
+	@printf 'javy: %s\nflint-chart: %s\nbundle-sha256: %s\nbundle-bytes: %s\nwasm-sha256: %s\n' \
 	  "$$($(JAVY) --version)" \
 	  "$$(cd js && node -p "JSON.parse(require('fs').readFileSync('node_modules/flint-chart/package.json','utf8')).version")" \
 	  "$$(shasum -a 256 js/dist/flint-javy.js | cut -d' ' -f1)" \
 	  "$$(wc -c < js/dist/flint-javy.js | tr -d ' ')" \
+	  "$$(shasum -a 256 compile/flint.wasm | cut -d' ' -f1)" \
 	  > compile/flint.wasm.buildinfo
 	@ls -la compile/flint.wasm
 	@cat compile/flint.wasm.buildinfo

@@ -16,6 +16,17 @@ for (const [fixRel, expRel] of PAIRS) {
     if (!f.endsWith(".json")) continue;
     try {
       const out = compileToNtSpec(readFileSync(fixturesDir + f, "utf8"));
+      // compileToNtSpec no longer throws on compile failure -- it returns an
+      // `{"error":{"message":...}}` envelope instead. An error envelope is a
+      // SUCCESS only for a fixture meant to fail; all fixtures here are
+      // meant to succeed, so treat one as a FAIL rather than committing it
+      // as a reference (references must never be error envelopes).
+      const parsed = JSON.parse(out);
+      if (parsed && typeof parsed === "object" && "error" in parsed) {
+        failed++;
+        console.error(`FAIL ${f}: ${parsed.error?.message ?? "(no message)"}`);
+        continue;
+      }
       writeFileSync(expectedDir + f, out);
       console.log(`ok   ${expRel.split("/").at(-2)}/${f} (${Buffer.byteLength(out)} bytes)`);
     } catch (err) {

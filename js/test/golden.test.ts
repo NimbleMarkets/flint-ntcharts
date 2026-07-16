@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { assembleFixture, expectGolden } from "./helpers.js";
 import { assembleNtcharts } from "../src/ntcharts/index.js";
+import { splitSeries } from "../src/ntcharts/series.js";
 
 describe("golden: bar-currency", () => {
   it("emits a stacked=false single-series bar spec with currency Y format", () => {
@@ -142,5 +143,60 @@ describe("golden: heatmap", () => {
     expect(out.theme?.gradient?.length).toBeGreaterThanOrEqual(5);
     expect(out.data.series).toEqual([]); // heat data lives in heat, not series
     expectGolden("heatmap", out);
+  });
+});
+
+describe("series palette stability", () => {
+  // NOTE on the task brief's originally-proposed fixture (assembleNtcharts
+  // with plain "alpha"/"beta"/"gamma" categories, no ordinalSortOrder): it
+  // IS red today, but for a different reason than the bug fixed here. With
+  // no ordinalSortOrder, `order` is pure first-appearance order *within
+  // each dataset*; dropping "beta" from `partial` means "gamma" is simply
+  // the dataset's 2nd-ever category there vs. 3rd in `full` — a
+  // first-appearance-order mismatch across two independently-ordered
+  // datasets, not the empty-preferred-bucket-shifts-index bug this task
+  // targets. Verified empirically: that fixture stays red even after the
+  // fix below (splitSeries has no way to reconcile order across two calls
+  // that never see each other's categories). It is a known, documented
+  // limitation (see the comment above the `return order...` in series.ts),
+  // not something this fix resolves, so it would be a false regression
+  // test if kept — see task-4-report.md for the empirical proof.
+  //
+  // flint only ever resolves `ordinalSortOrder` as a subset of values
+  // observed in *that same* dataset (semantic-types.ts matchSequence), and
+  // filterOverflow explicitly preserves every row for the color channel
+  // ("keep all rows but style the legend") — so assembleNtcharts can never
+  // hand splitSeries a preferred name with zero rows. The real bug only
+  // shows up when a caller (a future flint resolution, or any code that
+  // supplies its own canonical `ordinalSortOrder`) does that. We exercise
+  // `splitSeries` directly to construct that precisely.
+  const channelSemantics = {
+    color: { field: "cat", type: "nominal", ordinalSortOrder: ["alpha", "beta", "gamma"] } as any,
+  };
+  const pointOf = (row: Record<string, unknown>) => ({ x: row.t as number, y: row.v as number });
+  const colorOf = (series: ReturnType<typeof splitSeries>, name: string) =>
+    series.find((s) => s.name === name)?.color;
+
+  it("keeps a preferred category's color stable when it has zero rows in this dataset", () => {
+    const full = splitSeries(
+      [
+        { t: 1, v: 1, cat: "alpha" }, { t: 1, v: 2, cat: "beta" }, { t: 1, v: 3, cat: "gamma" },
+        { t: 2, v: 2, cat: "alpha" }, { t: 2, v: 3, cat: "beta" }, { t: 2, v: 4, cat: "gamma" },
+      ],
+      channelSemantics,
+      pointOf,
+    );
+    // "beta" (the preferred, 2nd, category) has zero rows here — it must not
+    // shift "gamma" (the preferred, 3rd, category) down to palette index 1.
+    const partial = splitSeries(
+      [
+        { t: 1, v: 1, cat: "alpha" }, { t: 1, v: 3, cat: "gamma" },
+        { t: 2, v: 2, cat: "alpha" }, { t: 2, v: 4, cat: "gamma" },
+      ],
+      channelSemantics,
+      pointOf,
+    );
+    expect(colorOf(partial, "alpha")).toBe(colorOf(full, "alpha"));
+    expect(colorOf(partial, "gamma")).toBe(colorOf(full, "gamma"));
   });
 });

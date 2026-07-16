@@ -27,7 +27,17 @@ export function splitSeries(
     buckets.get(key)!.push(pointOf(row));
   }
   const palette = paletteForScheme(groupCS.colorScheme?.scheme);
+  // Assign color by position in the full `order` list BEFORE filtering out
+  // empty buckets: an empty preferred category (e.g. a canonical
+  // ordinalSortOrder entry with zero rows in this dataset) must not shift
+  // the palette index of series that come after it. This keeps a category's
+  // color stable across datasets whenever flint resolves an
+  // ordinalSortOrder (the common case for repeated datasets of the same
+  // shape). Without an ordinalSortOrder, `order` falls back to
+  // first-appearance in THIS dataset, so a category's color can still shift
+  // if the appearance order of the surviving categories changes between
+  // datasets (e.g. one dataset's first row differs from another's).
   return order
-    .filter((name) => (buckets.get(name) ?? []).length > 0)
-    .map((name, i) => ({ name, values: buckets.get(name)!, color: palette[i % palette.length] }));
+    .map((name, i) => ({ name, values: buckets.get(name) ?? [], color: palette[i % palette.length] }))
+    .filter((s) => s.values.length > 0);
 }

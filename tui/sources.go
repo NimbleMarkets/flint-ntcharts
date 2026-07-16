@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"sync"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -69,9 +70,17 @@ func ListenSocket(ctx context.Context, path string, send func(tea.Msg)) error {
 	if err != nil {
 		return err
 	}
+	var mu sync.Mutex
+	conns := map[net.Conn]struct{}{}
 	go func() {
 		<-ctx.Done()
 		ln.Close()
+		mu.Lock()
+		defer mu.Unlock()
+		for c := range conns {
+			c.Close()
+		}
+		conns = make(map[net.Conn]struct{})
 	}()
 	go func() {
 		for {
@@ -82,8 +91,16 @@ func ListenSocket(ctx context.Context, path string, send func(tea.Msg)) error {
 				}
 				return
 			}
+			mu.Lock()
+			conns[conn] = struct{}{}
+			mu.Unlock()
 			go func(c net.Conn) {
-				defer c.Close()
+				defer func() {
+					mu.Lock()
+					delete(conns, c)
+					mu.Unlock()
+					c.Close()
+				}()
 				ReadStream(ctx, c, "socket:"+path, send)
 			}(conn)
 		}

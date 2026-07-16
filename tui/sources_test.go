@@ -104,3 +104,31 @@ func TestListenSocketDeliversDocs(t *testing.T) {
 		t.Fatalf("socket doc wrong: source=%q raw=%s", got.Source, got.Raw)
 	}
 }
+
+func TestListenSocketClosesConnsOnCancel(t *testing.T) {
+	// Use a very short path to avoid macOS unix socket path limit (103 bytes)
+	sock := "/tmp/flint_test_" + t.Name() + ".sock"
+	defer os.Remove(sock)
+	send, _ := collector()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	if err := ListenSocket(ctx, sock, send); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(10 * time.Millisecond) // allow listener to start
+	conn, err := net.Dial("unix", sock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	// hold the connection open with no data, then cancel: the server side
+	// must close it, which we observe as EOF/err on a read from our end
+	cancel()
+	conn.SetReadDeadline(time.Now().Add(3 * time.Second))
+	buf := make([]byte, 1)
+	if _, err := conn.Read(buf); err == nil {
+		t.Fatal("server did not close the connection on ctx cancellation")
+	} else if ne, ok := err.(net.Error); ok && ne.Timeout() {
+		t.Fatal("timed out: connection still open after cancel — goroutine leak")
+	}
+}

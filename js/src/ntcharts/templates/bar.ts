@@ -42,11 +42,12 @@ export const ntBarChartDef: ChartTemplateDef = {
     // Values aligned to the label order; series split by color.
     const index = new Map(labels.map((l, i) => [l, i]));
     const series = splitSeries(table, cs, (row) => ({ y: Number(row[valCS.field]) }));
+    const groupField = cs.color?.field ?? cs.group?.field;
     for (const s of series) {
       const slots = labels.map(() => ({ y: 0 }));
       for (const row of table) {
         const cat = String(row[catCS.field]);
-        const belongs = series.length === 1 || !cs.color || String(row[cs.color.field]) === s.name;
+        const belongs = series.length === 1 || groupField == null || String(row[groupField]) === s.name;
         if (belongs) slots[index.get(cat)!] = { y: Number(row[valCS.field]) };
       }
       s.values = slots;

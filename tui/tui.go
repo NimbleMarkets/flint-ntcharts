@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/NimbleMarkets/flint-ntcharts/compile"
 )
 
@@ -112,10 +113,18 @@ func (m Model) statusLine() string {
 	left := statusStyle.Render(fmt.Sprintf("flint-tui · %s · %dx%d", orDash(m.source), m.width, m.height))
 	switch {
 	case m.err != nil:
-		return left + "  " + errStyle.Render(truncate(m.err.Error(), m.width-lipgloss.Width(left)-2))
+		n := m.width - lipgloss.Width(left) - 2
+		if n <= 0 {
+			n = 0
+		}
+		return left + "  " + errStyle.Render(ansi.Truncate(m.err.Error(), n, "…"))
 	case len(m.warnings) > 0:
 		w := fmt.Sprintf("%d warning(s): %s", len(m.warnings), m.warnings[0].Message)
-		return left + "  " + warnStyle.Render(truncate(w, m.width-lipgloss.Width(left)-2))
+		n := m.width - lipgloss.Width(left) - 2
+		if n <= 0 {
+			n = 0
+		}
+		return left + "  " + warnStyle.Render(ansi.Truncate(w, n, "…"))
 	}
 	return left
 }
@@ -127,9 +136,3 @@ func orDash(s string) string {
 	return s
 }
 
-func truncate(s string, n int) string {
-	if n <= 1 || len(s) <= n {
-		return s
-	}
-	return s[:n-1] + "…"
-}

@@ -1,8 +1,10 @@
 package tui
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -96,5 +98,17 @@ func TestQuitKeys(t *testing.T) {
 	}
 	if _, ok := cmd().(tea.QuitMsg); !ok {
 		t.Fatal("q must produce tea.Quit")
+	}
+}
+
+func TestStatusLineUnicodeSafe(t *testing.T) {
+	r := newTestRunner(t)
+	m := New(r)
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 30, Height: 8})
+	m = next.(Model)
+	m.err = fmt.Errorf("ошибка: поле «цена» не число — очень длинное сообщение для усечения")
+	line := m.statusLine()
+	if !utf8.ValidString(line) {
+		t.Fatal("status line must remain valid UTF-8 after truncation")
 	}
 }

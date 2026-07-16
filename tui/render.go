@@ -71,12 +71,12 @@ func renderDoc(runner *compile.Runner, raw []byte, w, h int) renderedMsg {
 			return renderedMsg{err: fmt.Errorf("bad envelope: %w", err)}
 		}
 		s = env.Spec
-		s.Width, s.Height = w, h-1 // fit-to-window, reserving the status line
+		s.Width, s.Height = w, h
 	case docSpec:
 		if err := json.Unmarshal(raw, &s); err != nil {
 			return renderedMsg{err: fmt.Errorf("bad ntcharts-spec: %w", err)}
 		}
-		s.Width, s.Height = w, h-1 // fit-to-window, reserving the status line
+		s.Width, s.Height = w, h
 	}
 	if err := s.Validate(); err != nil {
 		return renderedMsg{err: err}

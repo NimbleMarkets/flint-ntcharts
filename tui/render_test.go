@@ -76,8 +76,8 @@ func TestRenderDocDirectSpecFitsWindow(t *testing.T) {
 		t.Fatalf("renderDoc(spec): %v", msg.err)
 	}
 	lines := strings.Split(strings.TrimRight(msg.view, "\n"), "\n")
-	if len(lines) > 14 { // fit: height-1 status line reserved by caller contract
-		t.Fatalf("direct spec not fitted: %d lines > 14", len(lines))
+	if len(lines) > 15 { // renderDoc receives the already-reduced chart-area height (15 here) and reserves nothing itself
+		t.Fatalf("direct spec not fitted: %d lines > 15", len(lines))
 	}
 }
 

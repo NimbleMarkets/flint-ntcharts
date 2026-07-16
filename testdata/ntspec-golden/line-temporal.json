@@ -1,7 +1,7 @@
 {
   "type": "timeseries",
-  "width": 372,
-  "height": 323,
+  "width": 345,
+  "height": 300,
   "data": {
     "series": [
       {
@@ -46,6 +46,6 @@
   "y_axis": {
     "title": "value"
   },
-  "_width": 372,
-  "_height": 323
+  "_width": 345,
+  "_height": 300
 }

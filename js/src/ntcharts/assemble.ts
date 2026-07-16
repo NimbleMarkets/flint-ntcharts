@@ -12,7 +12,11 @@ import { resolveBaseSizeShim, deriveStretchCapsShim, applyAggregationShim } from
 import { formatSpecToNt, d3TimeToGoLayout } from "./format.js";
 import type { NtSpec, NtSpecOut, NtFormat } from "./types.js";
 
-const TERMINAL_OPTIONS: AssembleOptions = { minStep: 1, defaultBandSize: 3, stepPadding: 0.2 };
+// maxStretch: 1 — terminal charts must not exceed the requested base size
+// (terminal cells are a fixed budget, not a freely growable canvas like
+// pixels); pass a `canvasSize` larger than `baseSize` in the chart spec to
+// explicitly allow growth beyond the base.
+const TERMINAL_OPTIONS: AssembleOptions = { minStep: 1, defaultBandSize: 3, stepPadding: 0.2, maxStretch: 1 };
 
 export interface NtInstantiateContext {
   channelSemantics: Record<string, ChannelSemantics>;
@@ -42,7 +46,7 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
   // Sizes: interpreted in CELLS throughout.
   const ceiling = input.chart_spec.canvasSize;
   const baseSize = resolveBaseSizeShim(input.chart_spec.baseSize, ceiling);
-  const caps = deriveStretchCapsShim(baseSize, ceiling);
+  const caps = deriveStretchCapsShim(baseSize, ceiling, TERMINAL_OPTIONS.maxStretch);
 
   // PRE-PHASE
   const normalized = normalizeStaticSeries(input.chart_spec.encodings ?? {}, rawData, semanticTypes);

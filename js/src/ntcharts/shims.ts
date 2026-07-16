@@ -28,9 +28,11 @@ export function deriveStretchCapsShim(
 }
 
 type Row = Record<string, unknown>;
+const averageFn = (v: number[]) => v.reduce((a, b) => a + b, 0) / v.length;
 const AGGS: Record<string, (vals: number[]) => number> = {
   sum: (v) => v.reduce((a, b) => a + b, 0),
-  average: (v) => v.reduce((a, b) => a + b, 0) / v.length,
+  average: averageFn,
+  mean: averageFn,
   count: (v) => v.length,
   min: (v) => Math.min(...v),
   max: (v) => Math.max(...v),
@@ -58,8 +60,13 @@ export function applyAggregationShim(
     const merged: Row = { ...bucket[0] };
     for (const enc of aggFields) {
       const field = (enc as any).field as string;
-      const fn = AGGS[(enc as any).aggregate as string] ?? AGGS.sum;
-      merged[field] = fn(bucket.map((r) => Number(r[field])).filter((n) => !Number.isNaN(n)));
+      const op = (enc as any).aggregate as string;
+      if (op === "count") {
+        merged[field] = bucket.length;
+      } else {
+        const fn = AGGS[op] ?? AGGS.sum;
+        merged[field] = fn(bucket.map((r) => Number(r[field])).filter((n) => !Number.isNaN(n)));
+      }
     }
     out.push(merged);
   }

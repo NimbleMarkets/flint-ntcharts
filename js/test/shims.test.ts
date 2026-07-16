@@ -24,4 +24,16 @@ describe("shims", () => {
     const plain = { x: { field: "cat" }, y: { field: "v" } };
     expect(applyAggregationShim(plain as any, rows)).toEqual(rows);
   });
+  it("treats mean as a synonym of average", () => {
+    const rows = [{ cat: "a", v: 2 }, { cat: "a", v: 4 }];
+    const encodings = { x: { field: "cat" }, y: { field: "v", aggregate: "mean" } };
+    expect(applyAggregationShim(encodings as any, rows)).toEqual([{ cat: "a", v: 3 }]);
+  });
+  it("count counts rows even for non-numeric fields", () => {
+    const rows = [{ cat: "a", id: "x1" }, { cat: "a", id: "x2" }, { cat: "b", id: "x3" }];
+    const encodings = { x: { field: "cat" }, y: { field: "id", aggregate: "count" } };
+    expect(applyAggregationShim(encodings as any, rows)).toEqual([
+      { cat: "a", id: 2 }, { cat: "b", id: 1 },
+    ]);
+  });
 });

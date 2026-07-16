@@ -8,5 +8,5 @@
     "allowJs": true,
     "skipLibCheck": true
   },
-  "include": ["src/ntcharts/**/*.ts", "test/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }

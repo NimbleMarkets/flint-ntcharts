@@ -1,46 +1,149 @@
 # flint-ntcharts
 
-A spike proving that [flint-chart](https://github.com/NimbleMarkets/flint-chart) can compile
-Vega-Lite specs inside a [Javy](https://github.com/bytecodealliance/javy)/QuickJS WebAssembly
-module, run from Go via [wazero](https://github.com/tetratelabs/wazero) — no Node.js runtime
-required at execution time. This is Phase 1 (feasibility) of the flint → ntcharts backend
-project: proving the wasm approach is viable before committing to it as the production
-compile path. See [SPIKE-RESULTS.md](./SPIKE-RESULTS.md) for the full go/no-go verdict,
-benchmark numbers, and known caveats.
+Compiles [flint-chart](https://github.com/NimbleMarkets/flint-chart) `ChartAssemblyInput`
+specs into an [ntcharts](https://github.com/NimbleMarkets/ntcharts) `spec.Spec` envelope —
+the flint → ntcharts terminal-UI compile backend. The TypeScript assembly pipeline
+(`js/src/ntcharts/`) is bundled into a [Javy](https://github.com/bytecodealliance/javy)/QuickJS
+WebAssembly module and run from Go via [wazero](https://github.com/tetratelabs/wazero), so no
+Node.js runtime is required at execution time.
+
+This started as a Phase 1 feasibility spike proving the wasm approach viable, using a
+stand-in Vega-Lite compile as the test payload before the real ntcharts-spec output existed —
+that wording is now historical; see [SPIKE-RESULTS.md](./SPIKE-RESULTS.md), a dated go/no-go
+record left untouched from that phase. Phase 3 added the pure-TypeScript ntcharts-spec
+backend described below, and Phase 4 wired it into the wasm module and the production Go
+API (`compile.New` / `compile.Compile`) documented in the Quickstart.
 
 ## Quickstart
 
-The compiled `flint.wasm` module is committed to the repo, so a fresh clone can run the Go
-test suite (parity tests + benchmark) with no build step:
+The compiled `flint.wasm` module and its build provenance
+(`compile/flint.wasm.buildinfo`) are committed to the repo, so a fresh clone runs the full
+Go test suite (parity + speccheck, no build step) with:
 
 ```sh
 go test ./...
 ```
 
+### Go API
+
+```go
+import (
+    "context"
+
+    "github.com/NimbleMarkets/flint-ntcharts/compile"
+)
+
+r, err := compile.New(ctx)
+if err != nil {
+    // handle
+}
+defer r.Close(ctx)
+
+spec, warnings, err := r.Compile(ctx, chartAssemblyInputJSON, compile.WithBaseSize(80, 24))
+if err != nil {
+    // handle
+}
+// spec is a github.com/NimbleMarkets/ntcharts/v2/spec.Spec, ready for spec.Build(spec).
+```
+
+- `compile.New(ctx)` compiles the embedded `flint.wasm` once and returns a `*Runner`, safe
+  for concurrent `Compile`/`CompileRaw` calls — each call instantiates a fresh, isolated
+  module instance. `NewRunner` is a deprecated alias kept for source compatibility.
+- `(*Runner).Compile` returns `(spec.Spec, []Warning, error)`; `warnings` is never nil.
+  `(*Runner).CompileRaw` returns the raw envelope JSON bytes instead, for callers that want
+  to parse it themselves.
+- `compile.WithBaseSize(w, h int)` sets `chart_spec.baseSize` (terminal cells) — the
+  requested render size. The backend runs with a stretch cap of 1 (see "Default stretch cap"
+  below), so this is a hard bound unless paired with `compile.WithCanvasSize(w, h int)`,
+  which sets a growth ceiling above `baseSize`.
+
+#### Envelope contract
+
+`Compile`/`CompileRaw` parse the same JSON envelope the wasm module (and the Node reference
+runner used by `npm run gen-expected`) emit on stdout — frozen as of Phase 4:
+
+```json
+{"spec": <NtSpec without any _-prefixed keys>, "warnings": [ChartWarning, ...], "size": {"width": N, "height": N}}
+```
+
+`warnings` is always present (possibly `[]`); `size` is always present; key order is exactly
+`spec, warnings, size`; the wasm/Node path serializes it with `JSON.stringify` and no
+pretty-printing. `spec` is valid input to ntcharts' `spec.Build`.
+
+### Build provenance
+
+`compile/flint.wasm.buildinfo`, written by `make wasm`, records the Javy version, the
+`flint-chart` npm package version, and the sha256/byte size of the pre-Javy esbuild bundle
+that produced the committed `compile/flint.wasm` — enough to check whether the committed
+wasm matches a given `js/` checkout without rebuilding it:
+
+```
+javy: javy 9.0.0
+flint-chart: 0.2.1
+bundle-sha256: 16f7eddaad3bc03e4df99fb1d3cb9653b637fe43735bf01c2eaed523fc8d4dbe
+bundle-bytes: 675065
+```
+
 ### Rebuilding the wasm module
 
-If you change `js/src/*.js` (or want to reproduce the artifact yourself):
+If you change `js/src/*.ts`/`js/src/*.js` (or want to reproduce the artifact yourself):
 
 ```sh
 cd js && npm install
-make wasm   # downloads bin/javy via `gh` on first run (macOS arm64)
+cd ..
+make wasm   # downloads bin/javy on first run; picks the right release asset for your OS/arch
 ```
+
+`make wasm` detects the host OS/architecture via `uname` (macOS/Linux, arm64/x86_64) and
+downloads the matching Javy release asset with `gh release download`, then regenerates both
+`compile/flint.wasm` and `compile/flint.wasm.buildinfo`. On an unsupported OS/arch, set
+`JAVY=/path/to/javy` to point at a pre-installed binary instead.
 
 ### Regenerating reference fixtures
 
-The Node-side reference outputs used by the Go parity test live under `testdata/expected/`.
-To regenerate them from `flint-chart` directly:
+The Node-side reference outputs used by the Go parity test live under `testdata/expected/`
+(pixel-scale) and `testdata/expected-terminal/` (terminal-scale). To regenerate them from
+`flint-chart` directly:
 
 ```sh
 cd js && npm run gen-expected
 ```
 
+CI runs this same command and fails the build if it produces a diff (see "Continuous
+Integration" below) — regenerate and commit whenever a fixture or backend change should
+change the reference output.
+
 ## Requirements
 
 - Go >= 1.25 (required by `wazero`)
 - Node >= 20
-- `gh` CLI on your `PATH` if you need `make wasm` to fetch `bin/javy` (macOS arm64 only; other
-  platforms should set `JAVY` to a pre-installed binary)
+- `gh` CLI on your `PATH` if you need `make wasm` to fetch `bin/javy` (auto-detects
+  macOS/Linux, arm64/x86_64 via `uname`; on any other platform, set `JAVY` to a pre-installed
+  binary instead)
+
+## Continuous Integration
+
+`.github/workflows/ci.yml` validates the artifacts already committed to the repo on every
+push to `main` and every pull request. It does **not** invoke Javy or rebuild `flint.wasm` —
+that stays a local/manual `make wasm` step (see "Rebuilding the wasm module" above); running
+Javy in CI is a later nicety. In order, the workflow: installs JS deps (`npm ci`),
+typechecks and runs the vitest suite (`tsc --noEmit`, `vitest run`), regenerates the
+Node-reference fixtures and fails on any diff against the committed
+`testdata/expected{,-terminal}/` (reference-drift check), builds the esbuild bundle (`npm
+run build`, a compile-only sanity check — the resulting bundle isn't Javy-built or
+compared), and runs `go test ./compile/` against the committed `flint.wasm` (byte-parity, no
+`ntcharts` dependency needed).
+
+**Known gap — the `ntcharts` sibling checkout.** `go test ./speccheck/...` needs the
+`ntcharts` module checked out at `../ntcharts` (wired via the `replace` directive in
+`go.mod`), which doesn't exist in CI until the `ntcharts` repo/branch this depends on has a
+pushed remote the workflow can check out alongside this one. The workflow probes for
+`../ntcharts` in a "Check ntcharts sibling" step and skips `go test ./speccheck/` with a
+`::warning::` annotation when it's absent, rather than hard-failing the whole run; `go test
+./compile/` (parity) has no `ntcharts` import and always runs regardless. Revisit this guard
+once `../ntcharts` is available in CI (checking out the sibling repo explicitly, or vendoring
+it). This repo itself has no remote yet either, so the workflow's first real execution
+happens on the first push.
 
 ## Phase 3: TypeScript → ntcharts-spec backend
 

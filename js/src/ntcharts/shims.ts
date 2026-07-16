@@ -53,17 +53,33 @@ const AGGS: Record<string, (vals: number[]) => number> = {
 
 // applyAggregationShim mirrors upstream core/aggregate.ts behavior: when any
 // encoding declares `aggregate`, group rows by every OTHER encoded field and
-// collapse each aggregate-encoded field with its function.
+// collapse each aggregate-encoded field with its function. Upstream ALSO
+// builds a fresh output row per group (`out.push(aggregated)` over a new
+// `{}`) rather than mutating the original row array, so that is not a
+// divergence — the real differences are:
 //
-// Divergence from upstream: this shim derives a fresh output row per group
-// (`{ ...bucket[0], [field]: aggregated }`), rather than aggregating
-// in-place over the original row array the way upstream's implementation is
-// documented to. It also has no special empty-bucket handling — every
-// group here is built from at least one matching row (groups come from
-// `Map` entries populated while iterating `rows`), so an empty bucket
-// cannot occur in this shim; upstream's behavior for a genuinely empty
-// aggregate bucket (e.g. a declared category with zero matching rows) is
-// unverified against this implementation.
+//   - Derived-column contract: upstream writes the aggregated value into a
+//     new column named `${field}_${op}` (`_count` for the `count` op) AND
+//     keeps the original `field` populated with the same value (for
+//     non-count ops), so downstream assemblers can reference either name.
+//     This shim writes only into the original `field`, with no `_op`-suffixed
+//     column. Upstream also short-circuits to a no-op when every derived
+//     column is already present in the first row (caller pre-aggregated);
+//     this shim has no such short-circuit and always re-groups/re-reduces.
+//   - Supported ops: this shim implements real `min`/`max`/`median`
+//     reducers (see `AGGS` above). Upstream has no `min`/`max`/`median`
+//     support at all — its `reduceOp` only handles `count`, `sum`, and the
+//     `average`/`mean` synonym pair (arithmetic mean); any other `op` string
+//     falls through its sum/mean branch rather than computing a min/max/
+//     median. A caller relying on this shim's min/max/median has no upstream
+//     equivalent to fall back to.
+//
+// This shim also has no special empty-bucket handling — every group here is
+// built from at least one matching row (groups come from `Map` entries
+// populated while iterating `rows`), so an empty bucket cannot occur;
+// upstream's behavior for a genuinely empty aggregate bucket (e.g. a
+// declared category with zero matching rows) is unverified against this
+// implementation.
 export function applyAggregationShim(
   encodings: Record<string, ChartEncoding | undefined>, rows: Row[],
 ): Row[] {

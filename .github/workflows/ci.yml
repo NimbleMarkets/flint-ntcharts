@@ -27,18 +27,30 @@ jobs:
         run: |
           cd js && npm run gen-expected
           git diff --exit-code ../testdata/expected ../testdata/expected-terminal
-      - name: Spike bundle builds
+      - name: Bundle builds (wasm source)
         run: cd js && npm run build
+      # Binds the committed compile/flint.wasm to the source that produced it,
+      # without needing Javy in CI: the esbuild bundle built one step above
+      # must hash to the same bundle-sha256 recorded in
+      # compile/flint.wasm.buildinfo by `make wasm` for the committed
+      # flint.wasm. A mismatch means flint.wasm is stale relative to js/src --
+      # someone ran `make wasm` against a different tree, or forgot to rerun
+      # it, or edited js/dist by hand.
+      - name: Wasm provenance check (bundle matches committed flint.wasm)
+        run: |
+          test "$(shasum -a 256 js/dist/flint-javy.js | cut -d' ' -f1)" = "$(grep '^bundle-sha256:' compile/flint.wasm.buildinfo | awk '{print $2}')"
       # go.mod has `replace github.com/NimbleMarkets/ntcharts/v2 => ../ntcharts`,
-      # required by speccheck/ (it cross-validates the emitted ntcharts-spec JSON
-      # against the real ntcharts Go renderer). That sibling checkout does not
-      # exist in CI until the ntcharts repo/branch is pushed somewhere this
-      # workflow can clone it alongside this repo, so probe for it instead of
-      # hard-failing: compile/'s parity suite needs no ntcharts import (it only
-      # asserts wasm stdout == committed Node reference bytes) and always runs;
-      # speccheck/ runs only when the sibling directory is present, with a
-      # warning annotation when it's skipped. Revisit once ../ntcharts is
-      # available in CI (vendor it in, or check out the sibling repo explicitly).
+      # required both by speccheck/ (it cross-validates the emitted
+      # ntcharts-spec JSON against the real ntcharts Go renderer) and by
+      # compile/ (compile.go decodes the envelope's spec field directly into
+      # ntcharts' spec.Spec). That sibling checkout does not exist in CI until
+      # the ntcharts repo/branch is pushed somewhere this workflow can clone
+      # it alongside this repo, so probe for it instead of hard-failing:
+      # every Go test in this module needs the sibling now, so `go test ./...`
+      # runs as a single guarded step, skipped with a warning annotation when
+      # the sibling is absent rather than run partially. Revisit once
+      # ../ntcharts is available in CI (vendor it in, or check out the
+      # sibling repo explicitly).
       - name: Check ntcharts sibling
         id: ntcharts-sibling
         run: |
@@ -46,10 +58,8 @@ jobs:
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::../ntcharts sibling checkout not found (go.mod replace target) -- skipping go test ./speccheck/. go test ./compile/ (parity, no ntcharts needed) still runs."
+            echo "::warning::../ntcharts sibling checkout not found (go.mod replace target) -- skipping go test ./... (both compile/ and speccheck/ now import ntcharts spec, so neither can run without it)."
           fi
-      - name: Go tests (parity, committed wasm)
-        run: go test ./compile/
-      - name: Go tests (speccheck, requires ../ntcharts sibling)
+      - name: Go tests (requires ../ntcharts sibling)
         if: steps.ntcharts-sibling.outputs.present == 'true'
-        run: go test ./speccheck/
+        run: go test ./...

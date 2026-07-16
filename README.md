@@ -17,8 +17,14 @@ API (`compile.New` / `compile.Compile`) documented in the Quickstart.
 ## Quickstart
 
 The compiled `flint.wasm` module and its build provenance
-(`compile/flint.wasm.buildinfo`) are committed to the repo, so a fresh clone runs the full
-Go test suite (parity + speccheck, no build step) with:
+(`compile/flint.wasm.buildinfo`) are committed to the repo, so no *build* step (no Javy, no
+`js/` install) is needed to run the Go test suite. A fresh clone still needs one thing before
+`go test ./...` will pass, though: both `compile/` and `speccheck/` decode into
+[`ntcharts`](https://github.com/NimbleMarkets/ntcharts)' `spec.Spec` type directly, so
+`go.mod`'s `replace github.com/NimbleMarkets/ntcharts/v2 => ../ntcharts` directive requires a
+sibling checkout of `ntcharts` (`spec` branch) at `../ntcharts` relative to this repo — see
+"Cross-validating against the real Go renderer" below for how to get one. With that sibling in
+place:
 
 ```sh
 go test ./...
@@ -56,6 +62,9 @@ if err != nil {
   requested render size. The backend runs with a stretch cap of 1 (see "Default stretch cap"
   below), so this is a hard bound unless paired with `compile.WithCanvasSize(w, h int)`,
   which sets a growth ceiling above `baseSize`.
+- `ctx` is honored for cancellation: `New` builds the wazero runtime with
+  `WithCloseOnContextDone(true)`, so an already-canceled (or later-canceled) `ctx` aborts the
+  compile and `Compile`/`CompileRaw` return a non-nil error instead of a result.
 
 #### Envelope contract
 
@@ -70,19 +79,45 @@ runner used by `npm run gen-expected`) emit on stdout — frozen as of Phase 4:
 `spec, warnings, size`; the wasm/Node path serializes it with `JSON.stringify` and no
 pretty-printing. `spec` is valid input to ntcharts' `spec.Build`.
 
+There are two failure layers, both specified:
+
+1. **Compile-time failure** (e.g. an unsupported chart type). The wasm/Node compiler catches
+   this internally, still writes valid JSON to stdout, and exits normally — success vs failure
+   is discriminated by the top-level key present, not by process exit status or a thrown
+   exception:
+
+   ```json
+   {"error": {"message": "Unknown chart type \"Rose Chart\". Supported: ..."}}
+   ```
+
+   `CompileRaw` returns these bytes verbatim (no error) — callers that call `CompileRaw`
+   directly must check for the `error` key themselves. `Compile` parses the envelope for you
+   and, when it finds an `error` key instead of `spec`/`warnings`/`size`, returns a non-nil Go
+   `error` built from `error.message` rather than a zero-value `spec.Spec`.
+2. **Wasm TRAP** (an engine-level failure, e.g. OOM, or a canceled `ctx` — see above). This
+   never produces the JSON envelope at all; it surfaces as a process-level Go `error` from
+   `CompileRaw` (and therefore `Compile`) with the module's stderr attached to the error
+   message.
+
 ### Build provenance
 
 `compile/flint.wasm.buildinfo`, written by `make wasm`, records the Javy version, the
-`flint-chart` npm package version, and the sha256/byte size of the pre-Javy esbuild bundle
-that produced the committed `compile/flint.wasm` — enough to check whether the committed
-wasm matches a given `js/` checkout without rebuilding it:
+`flint-chart` npm package version, the sha256/byte size of the pre-Javy esbuild bundle, and
+the sha256 of the resulting `compile/flint.wasm` itself — enough to check whether the
+committed wasm matches a given `js/` checkout without rebuilding it:
 
 ```
 javy: javy 9.0.0
 flint-chart: 0.2.1
-bundle-sha256: 16f7eddaad3bc03e4df99fb1d3cb9653b637fe43735bf01c2eaed523fc8d4dbe
-bundle-bytes: 675065
+bundle-sha256: 783631d9be839b99ca816ec3aeb06c284240a96f3e53f982bc9af52f979a9cc2
+bundle-bytes: 675508
+wasm-sha256: 537c886e481ebbd852e9836b2089a5ea2eb60ce07dfba7c4add797cda1fc5cc8
 ```
+
+`bundle-sha256` is also re-derived and checked in CI (see "Continuous Integration" below): the
+`Wasm provenance check` step rebuilds the esbuild bundle (but not the wasm module itself, no
+Javy involved) and asserts its hash matches this file's committed `bundle-sha256`, binding the
+committed `flint.wasm` to the committed `js/src/` that's supposed to have produced it.
 
 ### Rebuilding the wasm module
 
@@ -130,20 +165,25 @@ Javy in CI is a later nicety. In order, the workflow: installs JS deps (`npm ci`
 typechecks and runs the vitest suite (`tsc --noEmit`, `vitest run`), regenerates the
 Node-reference fixtures and fails on any diff against the committed
 `testdata/expected{,-terminal}/` (reference-drift check), builds the esbuild bundle (`npm
-run build`, a compile-only sanity check — the resulting bundle isn't Javy-built or
-compared), and runs `go test ./compile/` against the committed `flint.wasm` (byte-parity, no
-`ntcharts` dependency needed).
+run build`, step "Bundle builds (wasm source)" — a compile-only sanity check, the resulting
+bundle isn't Javy-built into a new wasm module), checks that bundle's sha256 against the
+`bundle-sha256` committed in `compile/flint.wasm.buildinfo` ("Wasm provenance check" — see
+"Build provenance" above; this is what actually binds the committed `js/src/` to the
+committed `flint.wasm` without needing Javy in CI), and finally runs `go test ./...`, gated
+on the `ntcharts` sibling checkout below.
 
-**Known gap — the `ntcharts` sibling checkout.** `go test ./speccheck/...` needs the
+**Known gap — the `ntcharts` sibling checkout.** Both `go test ./compile/...` (it decodes the
+envelope's `spec` field directly into ntcharts' `spec.Spec`) and `go test ./speccheck/...` (it
+cross-validates the emitted ntcharts-spec JSON against the real ntcharts Go renderer) need the
 `ntcharts` module checked out at `../ntcharts` (wired via the `replace` directive in
 `go.mod`), which doesn't exist in CI until the `ntcharts` repo/branch this depends on has a
 pushed remote the workflow can check out alongside this one. The workflow probes for
-`../ntcharts` in a "Check ntcharts sibling" step and skips `go test ./speccheck/` with a
-`::warning::` annotation when it's absent, rather than hard-failing the whole run; `go test
-./compile/` (parity) has no `ntcharts` import and always runs regardless. Revisit this guard
-once `../ntcharts` is available in CI (checking out the sibling repo explicitly, or vendoring
-it). This repo itself has no remote yet either, so the workflow's first real execution
-happens on the first push.
+`../ntcharts` in a "Check ntcharts sibling" step and skips the single `go test ./...` step
+with a `::warning::` annotation when it's absent, rather than hard-failing the whole run —
+there is no longer a Go test package in this module that can run without the sibling. Revisit
+this guard once `../ntcharts` is available in CI (checking out the sibling repo explicitly, or
+vendoring it). This repo itself has no remote yet either, so the workflow's first real
+execution happens on the first push.
 
 ## Phase 3: TypeScript → ntcharts-spec backend
 

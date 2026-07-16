@@ -3,9 +3,13 @@ package compile
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/NimbleMarkets/ntcharts/v2/spec"
 )
 
 var parityDirs = []struct{ fixtures, expected string }{
@@ -95,27 +99,128 @@ func TestCompileErrorSurfaced(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for unsupported chart type")
 	}
+	if !strings.Contains(err.Error(), "Unknown chart type") {
+		t.Fatalf("error = %q, want it to contain %q", err.Error(), "Unknown chart type")
+	}
 }
 
-func TestJSONRoundTripVsGolden(t *testing.T) {
-	// The parsed spec, re-marshaled, must contain no data loss vs the envelope's
-	// spec object (field-level check of the Go struct coverage).
-	raw, err := os.ReadFile(filepath.Join("..", "testdata", "expected", "heatmap.json"))
+func TestCompileCanceledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	r, err := New(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var env struct {
-		Spec json.RawMessage `json:"spec"`
-	}
-	if err := json.Unmarshal(raw, &env); err != nil {
+	defer r.Close(context.Background())
+
+	input, err := os.ReadFile(filepath.Join("..", "testdata", "fixtures", "scatter.json"))
+	if err != nil {
 		t.Fatal(err)
 	}
-	var asMap map[string]any
-	if err := json.Unmarshal(env.Spec, &asMap); err != nil {
-		t.Fatal(err)
+
+	cancel() // cancel before the compile even starts
+
+	if _, _, err := r.Compile(ctx, input); err == nil {
+		t.Fatal("expected an error compiling with an already-canceled context, got nil")
 	}
-	if _, ok := asMap["heat"]; !ok {
-		t.Fatal("heatmap envelope spec missing heat data")
+}
+
+// keyPathsSubset walks every key path present in want and asserts the same
+// path is present (non-nil container, key exists) in got. Values are allowed
+// to differ in formatting (numbers vs strings, float precision, etc) -- this
+// only catches a Go struct silently dropping a field the frozen envelope
+// contract still emits.
+func keyPathsSubset(t *testing.T, path string, want, got any) {
+	t.Helper()
+	switch w := want.(type) {
+	case map[string]any:
+		g, ok := got.(map[string]any)
+		if !ok {
+			t.Errorf("%s: want object, re-marshaled got %T", path, got)
+			return
+		}
+		for k, wv := range w {
+			gv, ok := g[k]
+			if !ok {
+				t.Errorf("%s.%s: key dropped by re-marshal", path, k)
+				continue
+			}
+			keyPathsSubset(t, path+"."+k, wv, gv)
+		}
+	case []any:
+		g, ok := got.([]any)
+		if !ok {
+			t.Errorf("%s: want array, re-marshaled got %T", path, got)
+			return
+		}
+		if len(g) != len(w) {
+			t.Errorf("%s: array length changed: want %d, got %d", path, len(w), len(g))
+			return
+		}
+		for i, wv := range w {
+			keyPathsSubset(t, fmt.Sprintf("%s[%d]", path, i), wv, g[i])
+		}
+	}
+	// scalars: presence at this path was already confirmed by the caller.
+}
+
+func TestSpecFieldDrift(t *testing.T) {
+	// For every committed reference envelope, decode its `spec` object into
+	// ntcharts spec.Spec, re-marshal that Go value, and confirm every key
+	// path present in the original spec JSON survives in the re-marshaled
+	// JSON. This catches the Go struct silently dropping/renaming a field
+	// relative to the frozen wasm/Node envelope contract -- TestParityWithNode
+	// only checks wasm-vs-Node byte equality, not Go-struct coverage of it.
+	dirs := []string{
+		filepath.Join("..", "testdata", "expected"),
+		filepath.Join("..", "testdata", "expected-terminal"),
+	}
+	total := 0
+	for _, dir := range dirs {
+		files, err := filepath.Glob(filepath.Join(dir, "*.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, fx := range files {
+			total++
+			name := filepath.Join(filepath.Base(dir), filepath.Base(fx))
+			t.Run(name, func(t *testing.T) {
+				raw, err := os.ReadFile(fx)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var env struct {
+					Spec spec.Spec `json:"spec"`
+				}
+				if err := json.Unmarshal(raw, &env); err != nil {
+					t.Fatalf("decode envelope: %v", err)
+				}
+
+				var envRaw struct {
+					Spec json.RawMessage `json:"spec"`
+				}
+				if err := json.Unmarshal(raw, &envRaw); err != nil {
+					t.Fatalf("decode envelope raw: %v", err)
+				}
+				var want any
+				if err := json.Unmarshal(envRaw.Spec, &want); err != nil {
+					t.Fatalf("decode original spec JSON: %v", err)
+				}
+
+				remarshaled, err := json.Marshal(env.Spec)
+				if err != nil {
+					t.Fatalf("re-marshal spec.Spec: %v", err)
+				}
+				var got any
+				if err := json.Unmarshal(remarshaled, &got); err != nil {
+					t.Fatalf("decode re-marshaled spec JSON: %v", err)
+				}
+
+				keyPathsSubset(t, "spec", want, got)
+			})
+		}
+	}
+	if total < 11 {
+		t.Fatalf("expected >=11 reference envelopes, found %d", total)
 	}
 }
 

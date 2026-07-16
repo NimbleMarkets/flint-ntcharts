@@ -46,20 +46,14 @@ func parseConfig(args []string) (config, error) {
 	return cfg, nil
 }
 
-func main() {
-	cfg, err := parseConfig(os.Args[1:])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "flint-tui: %v\nusage: flint-tui [--stdin] [--listen SOCK] [--poll 250ms] [chart.json]\n", err)
-		os.Exit(2)
-	}
-
+func run(cfg config) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	runner, err := compile.New(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "flint-tui: compiler init: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
 	defer runner.Close(ctx)
 
@@ -92,13 +86,23 @@ func main() {
 	if cfg.socket != "" {
 		if err := tui.ListenSocket(ctx, cfg.socket, send); err != nil {
 			fmt.Fprintf(os.Stderr, "flint-tui: listen: %v\n", err)
-			os.Exit(1)
+			return 1
 		}
 		defer os.Remove(cfg.socket)
 	}
 
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "flint-tui: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
+	return 0
+}
+
+func main() {
+	cfg, err := parseConfig(os.Args[1:])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "flint-tui: %v\nusage: flint-tui [--stdin] [--listen SOCK] [--poll 250ms] [chart.json]\n", err)
+		os.Exit(2)
+	}
+	os.Exit(run(cfg))
 }

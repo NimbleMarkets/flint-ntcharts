@@ -162,14 +162,14 @@ describe("series palette stability", () => {
   // not something this fix resolves, so it would be a false regression
   // test if kept — see task-4-report.md for the empirical proof.
   //
-  // flint only ever resolves `ordinalSortOrder` as a subset of values
-  // observed in *that same* dataset (semantic-types.ts matchSequence), and
-  // filterOverflow explicitly preserves every row for the color channel
-  // ("keep all rows but style the legend") — so assembleNtcharts can never
-  // hand splitSeries a preferred name with zero rows. The real bug only
-  // shows up when a caller (a future flint resolution, or any code that
-  // supplies its own canonical `ordinalSortOrder`) does that. We exercise
-  // `splitSeries` directly to construct that precisely.
+  // NOTE: this scenario IS reachable through assembleNtcharts, not just via
+  // direct callers: resolveChannelSemantics computes ordinalSortOrder from the
+  // PRE-overflow dataset (canonical sequences like weekday/month names via
+  // matchSequence), while filterOverflow trims rows globally when a DIFFERENT
+  // channel overflows — so a canonically-ordered color category whose rows all
+  // fall in the trimmed region arrives here with zero rows but a preferred slot.
+  // No fixture in this repo hits that path, so the mechanism is pinned by this
+  // direct unit test instead.
   const channelSemantics = {
     color: { field: "cat", type: "nominal", ordinalSortOrder: ["alpha", "beta", "gamma"] } as any,
   };

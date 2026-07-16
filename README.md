@@ -148,6 +148,90 @@ CI runs this same command and fails the build if it produces a diff (see "Contin
 Integration" below) — regenerate and commit whenever a fixture or backend change should
 change the reference output.
 
+## flint-tui
+
+`cmd/flint-tui` builds a persistent terminal chart window: a `bubbletea`/`lipgloss`
+program (`tui.Model`, `tui.New(runner)`) that stays open, watching one or more sources
+for documents to compile and render, re-fitting the chart to the terminal on every
+resize. This is the intended integration point for agents and scripts that want a live
+chart rather than a one-shot render: push a new document at any time and the window
+updates in place.
+
+```sh
+go build -o flint-tui ./cmd/flint-tui
+
+# watch a file (poll interval defaults to 250ms)
+flint-tui chart.json
+flint-tui --poll 100ms chart.json
+
+# read a stream of JSON documents from stdin
+flint-tui --stdin
+
+# listen on a unix socket for document streams
+flint-tui --listen /tmp/flint.sock
+```
+
+At least one source is required; passing none prints usage to stderr and exits 2.
+Sources may be combined (e.g. `flint-tui --stdin --listen /tmp/flint.sock chart.json`)
+— whichever source delivers a document most recently is the one on screen. `--stdin`
+and `--listen PATH` both accept a stream of back-to-back or NDJSON-style JSON documents
+(`encoding/json.Decoder` semantics — pretty-printed or compact, no delimiter required).
+
+### Document sniffing
+
+Each document pushed to `flint-tui`, from any source, is sniffed by its top-level keys
+and compiled/built accordingly:
+
+| Top-level key | Document kind | Handling |
+| --- | --- | --- |
+| `chart_spec` | flint `ChartAssemblyInput` | run through the embedded wasm compiler (`compile.Runner.Compile`), sized to the current terminal via `compile.WithBaseSize` |
+| `spec` | a `compile.Compile`/`CompileRaw` envelope | the `spec` field is lifted out and re-sized to the current terminal |
+| `type` | a raw `ntcharts/v2/spec.Spec` document | re-sized to the current terminal and built directly |
+
+Anything else (or invalid JSON) is a sniff error, surfaced on the status line without
+discarding whatever chart was on screen already (see below).
+
+### Fit-to-window
+
+The chart is always re-compiled/re-built at `terminal width x (terminal height - 1)`
+(one row reserved for the status line) — both on receiving a new document and on every
+`tea.WindowSizeMsg` (terminal resize), so an already-displayed chart re-fits without
+needing a fresh document push.
+
+### Keys
+
+- `q` or `ctrl+c` — quit
+
+### Status line and error handling
+
+The bottom row always shows `flint-tui · <source> · <width>x<height>`. If the most
+recent document failed to sniff, compile, or build, the compiler/validation error is
+appended **verbatim** and the previously-rendered chart is left on screen (nothing is
+blanked out just because the latest push was bad) — so a typo in an agent's next push
+never blanks a working dashboard. Non-fatal compiler warnings are shown the same way,
+one at a time, when there is no error.
+
+### Agent workflow example
+
+A typical agent loop compiles a flint document with
+[`flint-chart-mcp`](https://github.com/NimbleMarkets/flint-chart), reshapes it with
+`jq` if needed, and pushes the result at a live `flint-tui` window over its unix
+socket:
+
+```sh
+flint-tui --listen /tmp/flint.sock &
+
+flint-chart-mcp compile spec.json | jq '.' | nc -U /tmp/flint.sock
+```
+
+Or, for the simplest possible loop (no socket, just a watched file):
+
+```sh
+flint-tui watched.json &
+# ... later, from anywhere ...
+cat chart.json > watched.json
+```
+
 ## Requirements
 
 - Go >= 1.25 (required by `wazero`)
@@ -169,8 +253,9 @@ run build`, step "Bundle builds (wasm source)" — a compile-only sanity check, 
 bundle isn't Javy-built into a new wasm module), checks that bundle's sha256 against the
 `bundle-sha256` committed in `compile/flint.wasm.buildinfo` ("Wasm provenance check" — see
 "Build provenance" above; this is what actually binds the committed `js/src/` to the
-committed `flint.wasm` without needing Javy in CI), and finally runs `go test ./...`, gated
-on the `ntcharts` sibling checkout below.
+committed `flint.wasm` without needing Javy in CI), and finally runs `go build ./...`
+(this now also compiles `cmd/flint-tui`) followed by `go test ./...`, both gated on the
+`ntcharts` sibling checkout below.
 
 **Known gap — the `ntcharts` sibling checkout.** Both `go test ./compile/...` (it decodes the
 envelope's `spec` field directly into ntcharts' `spec.Spec`) and `go test ./speccheck/...` (it

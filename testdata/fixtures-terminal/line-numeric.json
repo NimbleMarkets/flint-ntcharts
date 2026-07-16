@@ -1,0 +1,11 @@
+{
+  "data": { "values": [
+    {"trial": 1, "score": 0.42}, {"trial": 2, "score": 0.55},
+    {"trial": 3, "score": 0.51}, {"trial": 4, "score": 0.68},
+    {"trial": 5, "score": 0.74}
+  ]},
+  "chart_spec": {
+    "chartType": "Line Chart",
+    "encodings": { "x": {"field": "trial"}, "y": {"field": "score"} }
+  }
+}

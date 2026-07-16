@@ -1,0 +1,14 @@
+{
+  "data": { "values": [
+    {"date": "2026-01-01", "value": 104.2},
+    {"date": "2026-02-01", "value": 108.9},
+    {"date": "2026-03-01", "value": 101.4},
+    {"date": "2026-04-01", "value": 115.7},
+    {"date": "2026-05-01", "value": 119.3},
+    {"date": "2026-06-01", "value": 112.8}
+  ]},
+  "chart_spec": {
+    "chartType": "Line Chart",
+    "encodings": {"x": {"field": "date"}, "y": {"field": "value"}}
+  }
+}

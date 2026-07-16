@@ -1,0 +1,47 @@
+{
+  "type": "bar",
+  "width": 64,
+  "height": 20,
+  "data": {
+    "series": [
+      {
+        "name": "revenue",
+        "values": [
+          {
+            "y": 1250000
+          },
+          {
+            "y": 872500
+          },
+          {
+            "y": 431200
+          },
+          {
+            "y": 2103000
+          }
+        ]
+      }
+    ]
+  },
+  "x_axis": {
+    "type": "category",
+    "labels": [
+      "Widgets",
+      "Gadgets",
+      "Gizmos",
+      "Doodads"
+    ],
+    "title": "product"
+  },
+  "y_axis": {
+    "title": "revenue",
+    "format": {
+      "kind": "currency",
+      "currency": "$",
+      "precision": 2
+    },
+    "min": 0
+  },
+  "_width": 64,
+  "_height": 20
+}

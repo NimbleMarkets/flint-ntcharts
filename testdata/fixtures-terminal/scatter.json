@@ -1,0 +1,15 @@
+{
+  "data": { "values": [
+    {"weight": 2100, "mpg": 31.5, "origin": "Japan"},
+    {"weight": 2875, "mpg": 24.0, "origin": "USA"},
+    {"weight": 3200, "mpg": 19.2, "origin": "USA"},
+    {"weight": 2450, "mpg": 27.8, "origin": "Germany"},
+    {"weight": 1980, "mpg": 33.1, "origin": "Japan"},
+    {"weight": 3600, "mpg": 16.5, "origin": "USA"}
+  ]},
+  "semantic_types": {"weight": "Quantity", "mpg": "Quantity", "origin": "Country"},
+  "chart_spec": {
+    "chartType": "Scatter Plot",
+    "encodings": {"x": {"field": "weight"}, "y": {"field": "mpg"}, "color": {"field": "origin"}}
+  }
+}

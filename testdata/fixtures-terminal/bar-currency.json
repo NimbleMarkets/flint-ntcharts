@@ -1,0 +1,13 @@
+{
+  "data": { "values": [
+    {"product": "Widgets", "revenue": 1250000},
+    {"product": "Gadgets", "revenue": 872500},
+    {"product": "Gizmos", "revenue": 431200},
+    {"product": "Doodads", "revenue": 2103000}
+  ]},
+  "semantic_types": {"revenue": {"semanticType": "Price", "unit": "USD"}},
+  "chart_spec": {
+    "chartType": "Bar Chart",
+    "encodings": {"x": {"field": "product"}, "y": {"field": "revenue"}}
+  }
+}

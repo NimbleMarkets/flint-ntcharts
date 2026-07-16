@@ -1,4 +1,5 @@
 import type { ChartTemplateDef } from "flint-chart";
+import { ntBarChartDef } from "./bar.js";
 
 const defs: ChartTemplateDef[] = [];
 
@@ -8,3 +9,5 @@ export function ntGetTemplateDef(chart: string): ChartTemplateDef | undefined {
 }
 export function ntSupportedChartTypes(): string[] { return defs.map((d) => d.chart); }
 export function ntRegister(def: ChartTemplateDef): void { defs.push(def); }
+
+ntRegister(ntBarChartDef);

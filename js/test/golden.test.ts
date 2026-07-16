@@ -118,3 +118,29 @@ describe("line: robustness", () => {
     expect((out._warnings ?? []).some((w: any) => w.code === "invalid-temporal-x")).toBe(true);
   });
 });
+
+describe("golden: scatter", () => {
+  it("emits a scatter spec with per-series colors", () => {
+    const out = assembleFixture("scatter");
+    expect(out.type).toBe("scatter");
+    expect(out.data.series.length).toBe(3); // Japan, USA, Germany
+    for (const s of out.data.series) expect(s.color).toMatch(/^#[0-9a-f]{6}$/);
+    const p = out.data.series[0].values![0];
+    expect(typeof p.x).toBe("number");
+    expect(typeof p.y).toBe("number");
+    expectGolden("scatter", out);
+  });
+});
+
+describe("golden: heatmap", () => {
+  it("emits heat cells with category labels and a gradient", () => {
+    const out = assembleFixture("heatmap");
+    expect(out.type).toBe("heatmap");
+    expect(out.heat?.cells?.length).toBe(9);
+    expect(out.x_axis?.labels).toEqual(["09", "12", "15"]);
+    expect(out.y_axis?.labels).toEqual(["Mon", "Tue", "Wed"]);
+    expect(out.theme?.gradient?.length).toBeGreaterThanOrEqual(5);
+    expect(out.data.series).toEqual([]); // heat data lives in heat, not series
+    expectGolden("heatmap", out);
+  });
+});

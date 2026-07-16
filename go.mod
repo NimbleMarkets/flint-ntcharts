@@ -2,12 +2,14 @@ module github.com/NimbleMarkets/flint-ntcharts
 
 go 1.25.0
 
-require github.com/tetratelabs/wazero v1.12.0
+require (
+	charm.land/bubbletea/v2 v2.0.7
+	charm.land/lipgloss/v2 v2.0.3
+	github.com/tetratelabs/wazero v1.12.0
+)
 
 require (
 	charm.land/bubbles/v2 v2.1.0 // indirect
-	charm.land/bubbletea/v2 v2.0.7 // indirect
-	charm.land/lipgloss/v2 v2.0.3 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20260601155805-6cf7526a1b3f // indirect
 	github.com/charmbracelet/x/ansi v0.11.7 // indirect

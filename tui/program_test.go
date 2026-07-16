@@ -2,7 +2,6 @@ package tui
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -42,5 +41,4 @@ func TestProgramHeadlessSmoke(t *testing.T) {
 	if strings.TrimSpace(fm.chartView) == "" {
 		t.Fatal("program never rendered the pushed document")
 	}
-	_ = context.Background()
 }

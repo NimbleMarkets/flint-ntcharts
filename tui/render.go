@@ -19,6 +19,7 @@ const (
 	docFlint            // ChartAssemblyInput: has chart_spec
 	docEnvelope         // compile envelope: has spec
 	docSpec             // raw ntcharts-spec: has type
+	docError            // upstream error envelope: has error
 )
 
 // sniff classifies a JSON document per the frozen sniffing rules.
@@ -34,15 +35,20 @@ func sniff(raw []byte) (docKind, error) {
 		return docEnvelope, nil
 	case probe["type"] != nil:
 		return docSpec, nil
+	case probe["error"] != nil:
+		return docError, nil
 	}
-	return docUnknown, fmt.Errorf("document is neither flint input (chart_spec), envelope (spec), nor ntcharts-spec (type)")
+	return docUnknown, fmt.Errorf("document is neither flint input (chart_spec), envelope (spec), ntcharts-spec (type), nor an error envelope (error)")
 }
 
-// renderedMsg carries an async render result back into Update.
+// renderedMsg carries an async render result back into Update. gen ties the
+// result back to the generation of the model that requested it (see rerenderCmd
+// in tui.go); Update drops stale results from superseded requests.
 type renderedMsg struct {
 	view     string
 	warnings []compile.Warning
 	err      error
+	gen      int
 }
 
 type viewer interface{ View() string }
@@ -55,6 +61,17 @@ func renderDoc(runner *compile.Runner, raw []byte, w, h int) renderedMsg {
 	if err != nil {
 		return renderedMsg{err: err}
 	}
+	if kind == docError {
+		var envErr struct {
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}
+		if err := json.Unmarshal(raw, &envErr); err != nil {
+			return renderedMsg{err: fmt.Errorf("bad error envelope: %w", err)}
+		}
+		return renderedMsg{err: fmt.Errorf("%s", envErr.Error.Message)}
+	}
 	var s spec.Spec
 	var warnings []compile.Warning
 	switch kind {
@@ -65,13 +82,15 @@ func renderDoc(runner *compile.Runner, raw []byte, w, h int) renderedMsg {
 		}
 	case docEnvelope:
 		var env struct {
-			Spec spec.Spec `json:"spec"`
+			Spec     spec.Spec         `json:"spec"`
+			Warnings []compile.Warning `json:"warnings"`
 		}
 		if err := json.Unmarshal(raw, &env); err != nil {
 			return renderedMsg{err: fmt.Errorf("bad envelope: %w", err)}
 		}
 		s = env.Spec
 		s.Width, s.Height = w, h
+		warnings = env.Warnings
 	case docSpec:
 		if err := json.Unmarshal(raw, &s); err != nil {
 			return renderedMsg{err: fmt.Errorf("bad ntcharts-spec: %w", err)}

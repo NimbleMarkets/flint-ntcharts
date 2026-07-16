@@ -7,8 +7,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"github.com/charmbracelet/x/ansi"
 	"github.com/NimbleMarkets/flint-ntcharts/compile"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // InputMsg delivers a new JSON document from any source (file, stdin, socket).
@@ -38,6 +38,11 @@ type Model struct {
 	warnings  []compile.Warning
 	err       error
 	waiting   bool // no document received yet
+
+	// gen is bumped on every InputMsg/WindowSizeMsg so in-flight renderedMsg
+	// results from a superseded request can be told apart from the latest
+	// one and dropped (renders run concurrently and can complete out of order).
+	gen int
 }
 
 func New(runner *compile.Runner) Model {
@@ -50,12 +55,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
+		m.gen++
 		return m, m.rerenderCmd()
 	case InputMsg:
 		m.raw, m.source = msg.Raw, msg.Source
 		m.waiting = false
+		m.gen++
 		return m, m.rerenderCmd()
 	case renderedMsg:
+		if msg.gen != m.gen {
+			return m, nil // stale result from a superseded request
+		}
 		m.warnings, m.err = msg.warnings, msg.err
 		if msg.err == nil {
 			m.chartView = msg.view // errors keep the last good chart
@@ -79,9 +89,13 @@ func (m Model) rerenderCmd() tea.Cmd {
 	if m.raw == nil || m.width <= 0 || m.height <= 1 {
 		return nil
 	}
-	runner, raw := m.runner, m.raw
+	runner, raw, gen := m.runner, m.raw, m.gen
 	w, h := m.width, m.height-1 // reserve the status line
-	return func() tea.Msg { return renderDoc(runner, raw, w, h) }
+	return func() tea.Msg {
+		msg := renderDoc(runner, raw, w, h)
+		msg.gen = gen
+		return msg
+	}
 }
 
 func (m Model) View() tea.View {
@@ -111,22 +125,28 @@ func (m Model) View() tea.View {
 
 func (m Model) statusLine() string {
 	left := statusStyle.Render(fmt.Sprintf("flint-tui · %s · %dx%d", orDash(m.source), m.width, m.height))
+	var line string
 	switch {
 	case m.err != nil:
 		n := m.width - lipgloss.Width(left) - 2
 		if n <= 0 {
 			n = 0
 		}
-		return left + "  " + errStyle.Render(ansi.Truncate(m.err.Error(), n, "…"))
+		line = left + "  " + errStyle.Render(ansi.Truncate(m.err.Error(), n, "…"))
 	case len(m.warnings) > 0:
 		w := fmt.Sprintf("%d warning(s): %s", len(m.warnings), m.warnings[0].Message)
 		n := m.width - lipgloss.Width(left) - 2
 		if n <= 0 {
 			n = 0
 		}
-		return left + "  " + warnStyle.Render(ansi.Truncate(w, n, "…"))
+		line = left + "  " + warnStyle.Render(ansi.Truncate(w, n, "…"))
+	default:
+		line = left
 	}
-	return left
+	// Safety net: the suffix budgeting above sizes the error/warning text to
+	// fit, but "left" itself (e.g. a long source path) can already overflow
+	// m.width, which would wrap the status line. Clamp the whole line.
+	return ansi.Truncate(line, m.width, "")
 }
 
 func orDash(s string) string {
@@ -135,4 +155,3 @@ func orDash(s string) string {
 	}
 	return s
 }
-

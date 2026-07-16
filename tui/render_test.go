@@ -41,6 +41,7 @@ func TestSniff(t *testing.T) {
 		{"flint", flintDoc, docFlint},
 		{"direct spec", specDoc, docSpec},
 		{"envelope", `{"spec": {"type":"bar","width":10,"height":5,"data":{"series":[{"name":"a","values":[{"y":1}]}]}}, "warnings": [], "size": {"width":10,"height":5}}`, docEnvelope},
+		{"error envelope", `{"error": {"message": "boom"}}`, docError},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -78,6 +79,38 @@ func TestRenderDocDirectSpecFitsWindow(t *testing.T) {
 	lines := strings.Split(strings.TrimRight(msg.view, "\n"), "\n")
 	if len(lines) > 15 { // renderDoc receives the already-reduced chart-area height (15 here) and reserves nothing itself
 		t.Fatalf("direct spec not fitted: %d lines > 15", len(lines))
+	}
+}
+
+func TestRenderDocEnvelopeWarningsSurfaced(t *testing.T) {
+	r := newTestRunner(t)
+	doc := `{
+	  "spec": {"type":"bar","width":10,"height":5,
+	    "data":{"series":[{"name":"a","values":[{"y":1}]}]}},
+	  "warnings": [
+	    {"severity":"warning","code":"foo","message":"first warning"},
+	    {"severity":"info","code":"bar","message":"second warning"}
+	  ],
+	  "size": {"width":10,"height":5}
+	}`
+	msg := renderDoc(r, []byte(doc), 40, 12)
+	if msg.err != nil {
+		t.Fatalf("renderDoc(envelope): %v", msg.err)
+	}
+	if len(msg.warnings) != 2 {
+		t.Fatalf("expected 2 warnings surfaced from envelope, got %d: %+v", len(msg.warnings), msg.warnings)
+	}
+}
+
+func TestRenderDocErrorEnvelopeSurfacesCompilerMessage(t *testing.T) {
+	r := newTestRunner(t)
+	doc := `{"error":{"message":"Unknown chart type \"X\""}}`
+	msg := renderDoc(r, []byte(doc), 40, 12)
+	if msg.err == nil {
+		t.Fatal("expected error-envelope doc to produce a render error")
+	}
+	if !strings.Contains(msg.err.Error(), `Unknown chart type "X"`) {
+		t.Fatalf("render error should carry the upstream compiler message, got: %v", msg.err)
 	}
 }
 

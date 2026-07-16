@@ -206,7 +206,7 @@ needing a fresh document push.
 
 The bottom row always shows `flint-tui · <source> · <width>x<height>`. If the most
 recent document failed to sniff, compile, or build, the compiler/validation error is
-appended **verbatim** and the previously-rendered chart is left on screen (nothing is
+appended **verbatim (truncated to fit the status line)** and the previously-rendered chart is left on screen (nothing is
 blanked out just because the latest push was bad) — so a typo in an agent's next push
 never blanks a working dashboard. Non-fatal compiler warnings are shown the same way,
 one at a time, when there is no error.

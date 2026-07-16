@@ -1,5 +1,5 @@
 import "./polyfills.js";
-import { compileToVegaLite } from "./compile.js";
+import { compileToNtSpec } from "./compile.js";
 
 // Javy exposes Javy.IO for WASI stdin/stdout access.
 function readStdin() {
@@ -28,4 +28,4 @@ function writeStdout(str) {
   }
 }
 
-writeStdout(compileToVegaLite(readStdin()));
+writeStdout(compileToNtSpec(readStdin()));

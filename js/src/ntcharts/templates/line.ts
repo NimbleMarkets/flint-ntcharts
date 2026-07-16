@@ -8,11 +8,12 @@ import type { NtInstantiateContext } from "../assemble.js";
 // from convertTemporalData/filterOverflow carry temporal cells as canonical
 // ISO date strings (e.g. "2026-01-01"), which Date.parse handles; the
 // Date/number branches are defensive for other call sites/future inputs.
+// Unparsable input yields NaN (never a fake epoch-0 point) so callers can
+// detect and drop it explicitly.
 function toMs(v: unknown): number {
   if (v instanceof Date) return v.getTime();
   if (typeof v === "number") return v;
-  const t = Date.parse(String(v));
-  return Number.isNaN(t) ? 0 : t;
+  return Date.parse(String(v));
 }
 
 export const ntLineChartDef: ChartTemplateDef = {
@@ -36,6 +37,34 @@ export const ntLineChartDef: ChartTemplateDef = {
       x: temporal ? toMs(row[xField]) : Number(row[xField]),
       y: Number(row[cs.y!.field]),
     }));
+
+    // ntcharts' timeserieslinechart/linechart assume chronological push
+    // order (pure append, segments drawn by insertion index), but our
+    // emitted series preserve raw row order from the source data. Sort each
+    // series ascending by x so the drawn segments are correct regardless of
+    // input ordering. Also drop any points whose x or y failed to parse
+    // (e.g. an unparsable temporal cell yields NaN from toMs) rather than
+    // silently plotting a fake epoch-0/NaN point; surface a single warning
+    // if anything was dropped.
+    let droppedCount = 0;
+    for (const series of emit.data.series) {
+      const values = series.values ?? [];
+      const kept = values.filter((p) => {
+        const ok = !Number.isNaN(p.x as number) && !Number.isNaN(p.y as number);
+        if (!ok) droppedCount++;
+        return ok;
+      });
+      kept.sort((a, b) => (a.x as number) - (b.x as number));
+      series.values = kept;
+    }
+    if (droppedCount > 0) {
+      ctx.warn({
+        severity: "warning",
+        code: "invalid-temporal-x",
+        message: `dropped ${droppedCount} point(s) with unparsable X values`,
+      });
+    }
+
     if (emit.data.series.length > 1) emit.options = { ...emit.options, show_legend: true };
   },
   encodingActions: [makeSortAction()],

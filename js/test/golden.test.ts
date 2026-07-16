@@ -63,3 +63,58 @@ describe("golden: line-temporal", () => {
     expectGolden("line-temporal", out);
   });
 });
+
+describe("line: robustness", () => {
+  const base = {
+    chart_spec: {
+      chartType: "Line Chart",
+      encodings: { x: { field: "date" }, y: { field: "value" } },
+      baseSize: { width: 40, height: 12 },
+    },
+  };
+  it("sorts points by x even when rows arrive out of order", () => {
+    const out = assembleNtcharts({
+      ...base,
+      data: { values: [
+        { date: "2026-03-01", value: 3 },
+        { date: "2026-01-01", value: 1 },
+        { date: "2026-02-01", value: 2 },
+      ]},
+    } as any);
+    const xs = out.data.series[0].values!.map((p: any) => p.x as number);
+    expect(xs).toEqual([...xs].sort((a, b) => a - b));
+    expect(out.data.series[0].values!.map((p: any) => p.y)).toEqual([1, 2, 3]);
+  });
+  // NOTE: a bare { field: "date" } encoding (as in `base`) won't reproduce the
+  // NaN path end-to-end here: flint-chart's inferVisCategory/isDate type
+  // inference is all-or-nothing (see semantic-types.ts) — one unparsable
+  // string flips the *whole column* to "nominal", so convertTemporalData
+  // never touches it and channelSemantics.x.type !== "temporal" (toMs is
+  // never called at all; Number("not-a-date") short-circuits to NaN/null
+  // through an entirely different, already-existing branch). To exercise
+  // the actual toMs()-returns-NaN / drop+warn path end-to-end, we force
+  // temporal typing explicitly via `encodings.x.type` + a matching
+  // `semantic_types` entry, which flint-chart honors unconditionally
+  // (resolve-semantics.ts: `if (encoding.type) resolvedType = encoding.type`)
+  // and which makes convertTemporalData leave the unparsable cell as a raw
+  // string. That is the shape production callers use for known-temporal
+  // fields, so this is still a realistic end-to-end exercise, not a unit seam.
+  it("drops unparsable temporal points with a warning instead of plotting epoch", () => {
+    const out = assembleNtcharts({
+      chart_spec: {
+        chartType: "Line Chart",
+        encodings: { x: { field: "date", type: "temporal" }, y: { field: "value" } },
+        baseSize: { width: 40, height: 12 },
+      },
+      semantic_types: { date: "temporal" },
+      data: { values: [
+        { date: "2026-01-01", value: 1 },
+        { date: "not-a-date", value: 99 },
+        { date: "2026-02-01", value: 2 },
+      ]},
+    } as any);
+    expect(out.data.series[0].values).toHaveLength(2);
+    expect(out.data.series[0].values!.every((p: any) => (p.x as number) > 1.7e12)).toBe(true);
+    expect((out._warnings ?? []).some((w: any) => w.code === "invalid-temporal-x")).toBe(true);
+  });
+});

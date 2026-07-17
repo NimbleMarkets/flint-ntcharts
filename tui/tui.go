@@ -1,15 +1,23 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"github.com/NimbleMarkets/flint-ntcharts/compile"
+	"github.com/NimbleMarkets/flint-ntcharts/envelope"
+	"github.com/NimbleMarkets/ntcharts/v2/spec"
 	"github.com/charmbracelet/x/ansi"
 )
+
+// Compiler abstracts the flint compiler: native (embedded wasm via
+// compile.Runner) or browser (booba-shim flintchart via an app adapter).
+type Compiler interface {
+	Compile(ctx context.Context, input []byte, opts ...envelope.Option) (spec.Spec, []envelope.Warning, error)
+}
 
 // InputMsg delivers a new JSON document from any source (file, stdin, socket).
 type InputMsg struct {
@@ -28,14 +36,14 @@ var (
 
 // Model is the flint-tui bubbletea model. Zero value is not usable; use New.
 type Model struct {
-	runner *compile.Runner
+	compiler Compiler
 
 	width, height int
 	raw           []byte // last received document (re-rendered on resize)
 	source        string
 
 	chartView string
-	warnings  []compile.Warning
+	warnings  []envelope.Warning
 	err       error
 	waiting   bool // no document received yet
 
@@ -45,8 +53,10 @@ type Model struct {
 	gen int
 }
 
-func New(runner *compile.Runner) Model {
-	return Model{runner: runner, waiting: true}
+// New builds a Model backed by c: a native *compile.Runner (embedded wasm) or
+// any other Compiler implementation (e.g. a browser/js host adapter).
+func New(c Compiler) Model {
+	return Model{compiler: c, waiting: true}
 }
 
 func (m Model) Init() tea.Cmd { return nil }
@@ -89,10 +99,10 @@ func (m Model) rerenderCmd() tea.Cmd {
 	if m.raw == nil || m.width <= 0 || m.height <= 1 {
 		return nil
 	}
-	runner, raw, gen := m.runner, m.raw, m.gen
+	compiler, raw, gen := m.compiler, m.raw, m.gen
 	w, h := m.width, m.height-1 // reserve the status line
 	return func() tea.Msg {
-		msg := renderDoc(runner, raw, w, h)
+		msg := renderDoc(compiler, raw, w, h)
 		msg.gen = gen
 		return msg
 	}

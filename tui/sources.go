@@ -1,3 +1,10 @@
+//go:build !js
+
+// File/socket/stdin document sources are native-only: they depend on os.Stat,
+// net.Listen("unix", ...), and long-lived reader goroutines that have no
+// meaningful equivalent under GOOS=js/GOARCH=wasm (there is no filesystem,
+// unix socket, or stdin to poll in a browser). Browser hosts push documents
+// into the tui.Model directly via InputMsg instead of using any of these.
 package tui
 
 import (

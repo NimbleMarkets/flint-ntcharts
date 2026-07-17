@@ -187,6 +187,7 @@ and compiled/built accordingly:
 | `chart_spec` | flint `ChartAssemblyInput` | run through the embedded wasm compiler (`compile.Runner.Compile`), sized to the current terminal via `compile.WithBaseSize` |
 | `spec` | a `compile.Compile`/`CompileRaw` envelope | the `spec` field is lifted out and re-sized to the current terminal |
 | `type` | a raw `ntcharts/v2/spec.Spec` document | re-sized to the current terminal and built directly |
+| `error` | an upstream compiler error envelope (`{"error":{"message"}}`) | the `message` is surfaced verbatim as the render error (status line), same as a compile-time failure from the `chart_spec` path |
 
 Anything else (or invalid JSON) is a sniff error, surfaced on the status line without
 discarding whatever chart was on screen already (see below).

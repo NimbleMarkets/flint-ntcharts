@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/NimbleMarkets/flint-ntcharts/compile"
+	"github.com/NimbleMarkets/flint-ntcharts/envelope"
 	"github.com/NimbleMarkets/ntcharts/v2/spec"
 )
 
@@ -46,7 +46,7 @@ func sniff(raw []byte) (docKind, error) {
 // in tui.go); Update drops stale results from superseded requests.
 type renderedMsg struct {
 	view     string
-	warnings []compile.Warning
+	warnings []envelope.Warning
 	err      error
 	gen      int
 }
@@ -56,7 +56,7 @@ type viewer interface{ View() string }
 // renderDoc compiles/builds raw into a chart view sized w×h (the chart area,
 // status line already excluded by the caller). Errors return err with view
 // empty; the model decides what stays on screen.
-func renderDoc(runner *compile.Runner, raw []byte, w, h int) renderedMsg {
+func renderDoc(compiler Compiler, raw []byte, w, h int) renderedMsg {
 	kind, err := sniff(raw)
 	if err != nil {
 		return renderedMsg{err: err}
@@ -73,17 +73,17 @@ func renderDoc(runner *compile.Runner, raw []byte, w, h int) renderedMsg {
 		return renderedMsg{err: fmt.Errorf("%s", envErr.Error.Message)}
 	}
 	var s spec.Spec
-	var warnings []compile.Warning
+	var warnings []envelope.Warning
 	switch kind {
 	case docFlint:
-		s, warnings, err = runner.Compile(context.Background(), raw, compile.WithBaseSize(w, h))
+		s, warnings, err = compiler.Compile(context.Background(), raw, envelope.WithBaseSize(w, h))
 		if err != nil {
 			return renderedMsg{err: err}
 		}
 	case docEnvelope:
 		var env struct {
-			Spec     spec.Spec         `json:"spec"`
-			Warnings []compile.Warning `json:"warnings"`
+			Spec     spec.Spec          `json:"spec"`
+			Warnings []envelope.Warning `json:"warnings"`
 		}
 		if err := json.Unmarshal(raw, &env); err != nil {
 			return renderedMsg{err: fmt.Errorf("bad envelope: %w", err)}

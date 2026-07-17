@@ -38,3 +38,14 @@ $(JAVY):
 	gh release download -R bytecodealliance/javy --pattern "$(JAVY_PATTERN)" -O bin/javy.gz --clobber
 	gunzip -f bin/javy.gz
 	chmod +x bin/javy
+
+.PHONY: browser-shim
+browser-shim:
+	cd js && npm run build:browser
+	@printf 'source: github.com/NimbleMarkets/flint-ntcharts (local)\ncommit: %s\nentry: js/src/entry-browser.ts\nflint-chart: %s\nsha256: %s\nbytes: %s\n' \
+	  "$$(git rev-parse HEAD)" \
+	  "$$(cd js && node -p "JSON.parse(require('fs').readFileSync('node_modules/flint-chart/package.json','utf8')).version")" \
+	  "$$(shasum -a 256 js/dist/flintchart-shim.mjs | cut -d' ' -f1)" \
+	  "$$(wc -c < js/dist/flintchart-shim.mjs | tr -d ' ')" \
+	  > js/dist/flintchart-shim.PROVENANCE.txt
+	@cat js/dist/flintchart-shim.PROVENANCE.txt

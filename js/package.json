@@ -8,9 +8,11 @@
   },
   "scripts": {
     "build": "esbuild src/entry-javy.js --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/flint-javy.js",
+    "build:browser": "esbuild src/entry-browser.ts --bundle --format=esm --platform=browser --target=es2020 --outfile=dist/flintchart-shim.mjs --define:__FLINTCHART_VERSION__='\"dev\"'",
     "gen-expected": "tsx scripts/node-runner.mjs",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "smoke:browser": "node scripts/node-smoke.mjs"
   },
   "dependencies": {
     "flint-chart": "^0.2.1"

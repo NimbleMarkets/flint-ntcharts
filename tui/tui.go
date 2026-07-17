@@ -15,6 +15,8 @@ import (
 
 // Compiler abstracts the flint compiler: native (embedded wasm via
 // compile.Runner) or browser (booba-shim flintchart via an app adapter).
+// Implementations must apply opts to the input (envelope.Apply) before
+// compiling; dropping them breaks fit-to-window silently.
 type Compiler interface {
 	Compile(ctx context.Context, input []byte, opts ...envelope.Option) (spec.Spec, []envelope.Warning, error)
 }

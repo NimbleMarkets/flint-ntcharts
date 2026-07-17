@@ -44,7 +44,7 @@ browser-shim:
 	$(eval FLINT_VER := $(shell cd js && node -e 'const fs=require("fs");console.log(JSON.parse(fs.readFileSync("node_modules/flint-chart/package.json")).version)'))
 	cd js && npx esbuild src/entry-browser.ts --bundle --format=esm --platform=browser --target=es2020 --outfile=dist/flintchart-shim.mjs --define:__FLINTCHART_VERSION__='"flint-chart@$(FLINT_VER)"'
 	@printf 'source: github.com/NimbleMarkets/flint-ntcharts (local)\ncommit: %s\nentry: js/src/entry-browser.ts\nflint-chart: %s\nsha256: %s\nbytes: %s\n' \
-	  "$$(git rev-parse HEAD)" \
+	  "$$(git rev-parse HEAD)$$(test -z "$$(git status --porcelain)" || echo -dirty)" \
 	  "$(FLINT_VER)" \
 	  "$$(shasum -a 256 js/dist/flintchart-shim.mjs | cut -d' ' -f1)" \
 	  "$$(wc -c < js/dist/flintchart-shim.mjs | tr -d ' ')" \

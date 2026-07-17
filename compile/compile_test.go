@@ -219,8 +219,8 @@ func TestSpecFieldDrift(t *testing.T) {
 			})
 		}
 	}
-	if total < 11 {
-		t.Fatalf("expected >=11 reference envelopes, found %d", total)
+	if total < 13 {
+		t.Fatalf("expected >=13 reference envelopes, found %d", total)
 	}
 }
 

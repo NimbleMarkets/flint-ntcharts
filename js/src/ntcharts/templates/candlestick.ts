@@ -69,7 +69,7 @@ export const ntCandlestickChartDef: ChartTemplateDef = {
     // Single series: Candlestick Chart has no color/group channel (ntcharts
     // spec.Build's buildOHLC takes the first series with OHLC points, but
     // the frozen emission semantics for this template are single-series).
-    emit.data.series = [{ name: xField ?? "ohlc", ohlc: kept }];
+    emit.data.series = [{ name: xField, ohlc: kept }];
     emit.theme = { ...emit.theme, palette: OHLC_PALETTE };
   },
 };

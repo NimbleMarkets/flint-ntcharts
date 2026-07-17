@@ -41,11 +41,15 @@ $(JAVY):
 
 .PHONY: browser-shim
 browser-shim:
-	cd js && npm run build:browser
+	$(eval FLINT_VER := $(shell cd js && node -e 'const fs=require("fs");console.log(JSON.parse(fs.readFileSync("node_modules/flint-chart/package.json")).version)'))
+	cd js && npx esbuild src/entry-browser.ts --bundle --format=esm --platform=browser --target=es2020 --outfile=dist/flintchart-shim.mjs --define:__FLINTCHART_VERSION__='"flint-chart@$(FLINT_VER)"'
 	@printf 'source: github.com/NimbleMarkets/flint-ntcharts (local)\ncommit: %s\nentry: js/src/entry-browser.ts\nflint-chart: %s\nsha256: %s\nbytes: %s\n' \
 	  "$$(git rev-parse HEAD)" \
-	  "$$(cd js && node -p "JSON.parse(require('fs').readFileSync('node_modules/flint-chart/package.json','utf8')).version")" \
+	  "$(FLINT_VER)" \
 	  "$$(shasum -a 256 js/dist/flintchart-shim.mjs | cut -d' ' -f1)" \
 	  "$$(wc -c < js/dist/flintchart-shim.mjs | tr -d ' ')" \
 	  > js/dist/flintchart-shim.PROVENANCE.txt
 	@cat js/dist/flintchart-shim.PROVENANCE.txt
+# Note: `npm run build:browser` (js/package.json) is for dev builds only and
+# stamps a fixed "dev" version; this Makefile target is the one used for
+# vendoring/release, and stamps the real flint-chart package version above.

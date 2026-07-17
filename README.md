@@ -289,6 +289,8 @@ hands off to a per-chart-type template (`js/src/ntcharts/templates/`) that fills
 - Line Chart
 - Scatter Plot
 - Heatmap
+- Candlestick Chart
+- Sparkline
 
 Only **"Line Chart"** is a registered `chartType` name in the template registry
 (`js/src/ntcharts/templates/index.ts`) — there is no separate "Timeseries Line Chart" entry.

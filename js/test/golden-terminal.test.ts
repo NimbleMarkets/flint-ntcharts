@@ -77,3 +77,30 @@ describe("golden-terminal: line-numeric", () => {
     expectGolden("line-numeric", out, "terminal");
   });
 });
+
+describe("golden-terminal: candlestick", () => {
+  it("emits time-sorted ohlc points with the up/down palette", () => {
+    const out = assembleFixture("candlestick", "terminal");
+    expect(out.type).toBe("ohlc");
+    expectWithinTerminalBase(out);
+    const pts = out.data.series[0].ohlc!;
+    expect(pts).toHaveLength(5);
+    const ts = pts.map((p: any) => p.t as number);
+    expect(ts).toEqual([...ts].sort((a, b) => a - b));
+    expect(pts[0]).toMatchObject({ o: 100, h: 108, l: 97, c: 105 });
+    expect(out.theme?.palette).toEqual(["#26a69a", "#ef5350"]);
+    expect(out.x_axis?.format?.kind).toBe("time");
+    expectGolden("candlestick", out, "terminal");
+  });
+});
+
+describe("golden-terminal: sparkline", () => {
+  it("emits a single y-value series", () => {
+    const out = assembleFixture("sparkline", "terminal");
+    expect(out.type).toBe("sparkline");
+    expectWithinTerminalBase(out);
+    expect(out.data.series).toHaveLength(1);
+    expect(out.data.series[0].values!.map((p: any) => p.y)).toEqual([3, 5, 2, 8, 6, 9, 4, 7]);
+    expectGolden("sparkline", out, "terminal");
+  });
+});

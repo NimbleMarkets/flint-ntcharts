@@ -54,8 +54,8 @@ func TestParityWithNode(t *testing.T) {
 			})
 		}
 	}
-	if total < 11 {
-		t.Fatalf("expected ≥11 parity fixtures, found %d", total)
+	if total < 13 {
+		t.Fatalf("expected ≥13 parity fixtures, found %d", total)
 	}
 }
 

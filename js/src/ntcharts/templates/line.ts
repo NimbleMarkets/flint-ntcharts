@@ -1,20 +1,8 @@
 import type { ChartTemplateDef } from "flint-chart";
 import { makeCartesianPivot, makeSortAction } from "flint-chart";
 import { splitSeries } from "../series.js";
+import { toMs } from "../temporal.js";
 import type { NtInstantiateContext } from "../assemble.js";
-
-// toMs coerces a converted temporal cell to ms-since-epoch, matching
-// ntcharts-spec's time convention. Verified shape (see task-4 report): rows
-// from convertTemporalData/filterOverflow carry temporal cells as canonical
-// ISO date strings (e.g. "2026-01-01"), which Date.parse handles; the
-// Date/number branches are defensive for other call sites/future inputs.
-// Unparsable input yields NaN (never a fake epoch-0 point) so callers can
-// detect and drop it explicitly.
-function toMs(v: unknown): number {
-  if (v instanceof Date) return v.getTime();
-  if (typeof v === "number") return v;
-  return Date.parse(String(v));
-}
 
 export const ntLineChartDef: ChartTemplateDef = {
   chart: "Line Chart",

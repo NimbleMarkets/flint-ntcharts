@@ -4,6 +4,8 @@ import { ntStackedBarChartDef } from "./stacked-bar.js";
 import { ntLineChartDef } from "./line.js";
 import { ntScatterPlotDef } from "./scatter.js";
 import { ntHeatmapDef } from "./heatmap.js";
+import { ntCandlestickChartDef } from "./candlestick.js";
+import { ntSparklineDef } from "./sparkline.js";
 
 const defs: ChartTemplateDef[] = [];
 
@@ -19,3 +21,5 @@ ntRegister(ntStackedBarChartDef);
 ntRegister(ntLineChartDef);
 ntRegister(ntScatterPlotDef);
 ntRegister(ntHeatmapDef);
+ntRegister(ntCandlestickChartDef);
+ntRegister(ntSparklineDef);

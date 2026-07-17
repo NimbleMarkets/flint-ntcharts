@@ -27,8 +27,8 @@ func TestGoldensBuildWithNtcharts(t *testing.T) {
 		}
 		goldens = append(goldens, matches...)
 	}
-	if len(goldens) < 11 {
-		t.Fatalf("expected ≥11 goldens across ntspec-golden + ntspec-golden-terminal, found %d (run the vitest suite first)", len(goldens))
+	if len(goldens) < 13 {
+		t.Fatalf("expected ≥13 goldens across ntspec-golden + ntspec-golden-terminal, found %d (run the vitest suite first)", len(goldens))
 	}
 	for _, path := range goldens {
 		name := filepath.Base(path)

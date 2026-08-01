@@ -102,6 +102,11 @@ func TestExamplesCompile(t *testing.T) {
 	if len(examples) != 3 {
 		t.Fatalf("expected 3 examples, got %d", len(examples))
 	}
+	for i, want := range []string{"Bar Chart", "Timeseries Line", "Candlestick"} {
+		if examples[i].name != want {
+			t.Fatalf("examples[%d].name = %q, want %q", i, examples[i].name, want)
+		}
+	}
 	if m.src != examples[0].src {
 		t.Fatal("startup buffer is not examples[0]")
 	}
@@ -160,5 +165,28 @@ func TestExampleSwitching(t *testing.T) {
 	m = next.(model)
 	if m.src != before {
 		t.Fatal("alt+9 must not change the buffer")
+	}
+}
+
+func TestExampleChord(t *testing.T) {
+	cases := []struct {
+		key string
+		idx int
+		ok  bool
+	}{
+		{"ctrl+1", 0, true},
+		{"alt+1", 0, true},
+		{"alt+9", 8, true},
+		{"ctrl+c", 0, false},
+		{"alt+", 0, false},
+		{"ctrl+0", 0, false},
+		{"ctrl+alt+1", 0, false},
+		{"1", 0, false},
+	}
+	for _, c := range cases {
+		idx, ok := exampleChord(c.key)
+		if ok != c.ok || (ok && idx != c.idx) {
+			t.Errorf("exampleChord(%q) = (%d, %v), want (%d, %v)", c.key, idx, ok, c.idx, c.ok)
+		}
 	}
 }

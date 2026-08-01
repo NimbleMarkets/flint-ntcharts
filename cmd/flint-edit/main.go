@@ -167,7 +167,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if i, ok := exampleChord(key); ok && i < len(examples) {
 			return m, m.loadExample(i)
 		}
-		// chords past the example list (e.g. alt+9) fall through to the editor
+		// chords past the example list (alt+9, ctrl+9) fall through to the editor,
+		// as do legacy-terminal artifacts for unsupported ctrl+digit (e.g. ctrl+@)
 
 	case renderedMsg:
 		if msg.gen != m.gen {

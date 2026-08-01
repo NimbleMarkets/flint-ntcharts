@@ -72,6 +72,9 @@ func TestViewHasBothPanes(t *testing.T) {
 	if !strings.Contains(v.Content, "│") {
 		t.Fatal("View is missing the pane divider")
 	}
+	if !strings.Contains(v.Content, "ctrl/alt+1·2·3 examples") {
+		t.Fatal("title bar is missing the example-switcher hint")
+	}
 }
 
 // TestEditorHighlights confirms the JSON syntax highlighting is wired: the

@@ -273,6 +273,11 @@ Type in the left pane (start with the seeded bar chart), and the right pane redr
 `"Bar Chart"` to `"Sparkline"` or `"Candlestick Chart"`, break the JSON to see the error land on the
 status line while the last good chart stays up, resize the window to watch it re-fit. `ctrl+c` quits.
 
+- Press `alt+2` (or `ctrl+2` in a kitty-protocol terminal): the buffer swaps
+  to the Timeseries Line example and the chart re-renders; `alt+3` shows the
+  Candlestick. `alt+1` returns to the Bar Chart. Unbound chords (`alt+9`) do
+  nothing.
+
 The `flint-tui` checks below exercise the same renderer through the file/stdin/socket **hosting** path
 (what agents push to), which the playground doesn't cover.
 

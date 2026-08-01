@@ -55,12 +55,12 @@ Loading an example: `ed.SetContent(src)`, cursor to end, `m.src = src`,
 Switching replaces the buffer without confirmation — flint-edit is a
 playground; current edits are disposable.
 
-The program enables bubbletea v2 keyboard enhancements (kitty keyboard
-protocol) so ctrl+digit is distinguishable in terminals that support it
-(Ghostty, Kitty, WezTerm, newer iTerm2). alt+digit is ESC-prefixed and works
-in effectively all terminals — it is the portable fallback, and the reason
-ctrl-only was rejected. Enhancement request failing / unsupported terminal is
-silent: alt chords still work.
+Bubble Tea v2 requests kitty key disambiguation from the terminal by default,
+so ctrl+digit is distinguishable wherever the terminal supports the protocol
+(Ghostty, Kitty, WezTerm, newer iTerm2) with no opt-in code on our side.
+alt+digit is ESC-prefixed and works in effectively all terminals — it is the
+portable fallback, and the reason ctrl-only was rejected. In a terminal
+without the protocol, ctrl chords simply never arrive: alt chords still work.
 
 ## UI
 

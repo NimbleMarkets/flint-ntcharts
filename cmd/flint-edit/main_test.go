@@ -115,3 +115,47 @@ func TestExamplesCompile(t *testing.T) {
 		}
 	}
 }
+
+// TestExampleSwitching drives ctrl/alt+digit chords through Update and
+// asserts the buffer, render pipeline, and out-of-range behavior.
+func TestExampleSwitching(t *testing.T) {
+	m := newTestModel(t)
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 24})
+	m = next.(model)
+
+	// alt+2 → example 2 in buffer and src, render fired and lands clean
+	next, cmd := m.Update(tea.KeyPressMsg{Code: '2', Mod: tea.ModAlt})
+	m = next.(model)
+	if m.src != examples[1].src {
+		t.Fatal("alt+2 did not switch src to example 2")
+	}
+	if m.ed.GetCurrentContent() != examples[1].src {
+		t.Fatal("alt+2 did not replace the editor buffer")
+	}
+	if !strings.Contains(m.msg, examples[1].name) {
+		t.Fatalf("status %q does not name the loaded example", m.msg)
+	}
+	if cmd == nil {
+		t.Fatal("alt+2 did not fire a render")
+	}
+	next, _ = m.Update(cmd())
+	m = next.(model)
+	if m.state != 1 {
+		t.Fatalf("example 2 render not clean: state %d, msg %q", m.state, m.msg)
+	}
+
+	// ctrl+3 → example 3 (same path, ctrl modifier)
+	next, cmd = m.Update(tea.KeyPressMsg{Code: '3', Mod: tea.ModCtrl})
+	m = next.(model)
+	if m.src != examples[2].src || cmd == nil {
+		t.Fatal("ctrl+3 did not switch to example 3 with a render")
+	}
+
+	// alt+9 → no example there; buffer untouched
+	before := m.src
+	next, _ = m.Update(tea.KeyPressMsg{Code: '9', Mod: tea.ModAlt})
+	m = next.(model)
+	if m.src != before {
+		t.Fatal("alt+9 must not change the buffer")
+	}
+}

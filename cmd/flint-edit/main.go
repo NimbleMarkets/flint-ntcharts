@@ -115,6 +115,38 @@ func (m model) renderCmd() tea.Cmd {
 	}
 }
 
+// exampleChord maps a bubbletea key string ("ctrl+1", "alt+3", ...) to a
+// 0-based example index. Both modifiers are bound because ctrl+digit only
+// reaches the program in kitty-protocol terminals; alt+digit works nearly
+// everywhere and is the portable fallback.
+func exampleChord(key string) (int, bool) {
+	var digit string
+	switch {
+	case strings.HasPrefix(key, "ctrl+"):
+		digit = strings.TrimPrefix(key, "ctrl+")
+	case strings.HasPrefix(key, "alt+"):
+		digit = strings.TrimPrefix(key, "alt+")
+	default:
+		return 0, false
+	}
+	if len(digit) != 1 || digit[0] < '1' || digit[0] > '9' {
+		return 0, false
+	}
+	return int(digit[0] - '1'), true
+}
+
+// loadExample replaces the editor buffer with examples[i] and kicks off a
+// render. Current edits are discarded — flint-edit is a playground.
+func (m *model) loadExample(i int) tea.Cmd {
+	ex := examples[i]
+	m.ed.SetContent(ex.src)
+	_ = m.ed.SetCursorPositionEnd()
+	m.src = ex.src
+	m.gen++
+	m.msg, m.state = "loaded example: "+ex.name, 0
+	return m.renderCmd()
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -128,9 +160,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(edCmd, m.renderCmd())
 
 	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
+		key := msg.String()
+		if key == "ctrl+c" {
 			return m, tea.Quit
 		}
+		if i, ok := exampleChord(key); ok && i < len(examples) {
+			return m, m.loadExample(i)
+		}
+		// chords past the example list (e.g. alt+9) fall through to the editor
 
 	case renderedMsg:
 		if msg.gen != m.gen {

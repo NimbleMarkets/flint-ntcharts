@@ -87,3 +87,31 @@ func TestEditorHighlights(t *testing.T) {
 		t.Fatal("editor pane has no syntax-highlight color — is WindowSizeMsg forwarded to the editor?")
 	}
 }
+
+// TestExamplesCompile guards against a typo'd built-in example shipping
+// broken: every example must compile through the real wasm compiler with a
+// clean status (no warnings) and render a non-empty chart.
+func TestExamplesCompile(t *testing.T) {
+	m := newTestModel(t)
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 24})
+	m = next.(model)
+
+	if len(examples) != 3 {
+		t.Fatalf("expected 3 examples, got %d", len(examples))
+	}
+	if m.src != examples[0].src {
+		t.Fatal("startup buffer is not examples[0]")
+	}
+	for i, ex := range examples {
+		m.src = ex.src
+		m.gen++
+		m = renderNow(t, m)
+		if m.state != 1 {
+			t.Fatalf("example %d (%s): state %d, msg %q — want clean compile",
+				i+1, ex.name, m.state, m.msg)
+		}
+		if strings.TrimSpace(m.chart) == "" {
+			t.Fatalf("example %d (%s): empty chart", i+1, ex.name)
+		}
+	}
+}

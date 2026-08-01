@@ -25,21 +25,6 @@ import (
 // terminals, "monokai", "nord").
 const highlightTheme = "catppuccin-mocha"
 
-const sample = `{
-  "data": { "values": [
-    {"month": "Jan", "revenue": 120},
-    {"month": "Feb", "revenue": 180},
-    {"month": "Mar", "revenue": 95},
-    {"month": "Apr", "revenue": 210},
-    {"month": "May", "revenue": 165}
-  ]},
-  "semantic_types": { "revenue": {"semanticType": "Price", "unit": "USD"} },
-  "chart_spec": {
-    "chartType": "Bar Chart",
-    "encodings": { "x": {"field": "month"}, "y": {"field": "revenue"} }
-  }
-}`
-
 var (
 	titleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Bold(true) // cyan
 	hintStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))            // grey
@@ -74,10 +59,10 @@ func newModel(c tui.Compiler) model {
 	ed := goeditor.New(40, 20)
 	ed.DisableVimMode(true) // plain, non-modal typing
 	ed.SetLanguage("json", highlightTheme)
-	ed.SetContent(sample)
+	ed.SetContent(examples[0].src)
 	_ = ed.SetCursorPositionEnd()
 	ed.Focus()
-	return model{runner: c, ed: ed, src: sample, msg: "type to render"}
+	return model{runner: c, ed: ed, src: examples[0].src, msg: "type to render"}
 }
 
 func (m model) Init() tea.Cmd { return m.ed.Init() }

@@ -1,0 +1,132 @@
+# flint-ntcharts - Copyright (c) 2026 Neomantra Corp
+
+version: '3'
+
+vars:
+  NTCHARTS: '../ntcharts'
+  BOOBA: '../booba-shim'
+
+tasks:
+  default:
+    desc: 'Run the full test suite (Go + JS)'
+    deps: [test]
+
+  list:
+    desc: 'List available tasks'
+    cmds: [task --list-all]
+
+###############################################################################
+# Test & verify
+
+  test:
+    desc: 'Full suite — Go packages and the TypeScript backend'
+    deps: [test-go, test-js]
+
+  test-go:
+    desc: 'Go tests: compile parity, speccheck, envelope, tui, cmd (needs ../ntcharts)'
+    cmds:
+      - go test ./... -count=1
+
+  test-js:
+    desc: 'TypeScript backend: vitest + type-check'
+    dir: js
+    cmds:
+      - npx vitest run
+      - npx tsc --noEmit
+
+  parity:
+    desc: 'WASM↔Node byte-parity across every fixture (13/13)'
+    cmds:
+      - go test ./compile/ -run TestParityWithNode -v -count=1
+
+  speccheck:
+    desc: 'Every emitted spec renders through the real ntcharts renderer'
+    cmds:
+      - go test ./speccheck/ -count=1
+
+  vet:
+    desc: 'go vet + gofmt check'
+    cmds:
+      - go vet ./...
+      - test -z "$(gofmt -l compile envelope tui cmd speccheck)" || (echo 'gofmt needed:'; gofmt -l compile envelope tui cmd speccheck; exit 1)
+
+  gen-expected:
+    desc: 'Regenerate the Node reference envelopes (expect no git diff)'
+    dir: js
+    cmds:
+      - npm run gen-expected
+
+  provenance:
+    desc: 'Confirm the committed flint.wasm matches its buildinfo stamp'
+    cmds:
+      - |
+        got=$(shasum -a 256 compile/flint.wasm | cut -d' ' -f1)
+        want=$(grep wasm-sha256 compile/flint.wasm.buildinfo | awk '{print $2}')
+        if [ "$got" = "$want" ]; then echo "ok  flint.wasm matches buildinfo ($got)"; else echo "MISMATCH  got=$got  want=$want"; exit 1; fi
+
+  verify:
+    desc: 'Tri-repo sweep — this repo plus the ntcharts & booba-shim siblings'
+    cmds:
+      - go test ./... -count=1
+      - cd {{.NTCHARTS}} && go test ./spec/ -count=1
+      - cd {{.BOOBA}} && go test ./... -count=1
+
+###############################################################################
+# Build artifacts
+
+  js-deps:
+    desc: 'Install JS dependencies (npm ci)'
+    dir: js
+    cmds:
+      - npm ci
+
+  wasm:
+    desc: 'Rebuild the embedded flint.wasm compiler + provenance stamp'
+    cmds:
+      - make wasm
+
+  browser-shim:
+    desc: 'Rebuild the browser shim bundle (vendored into booba-shim) + provenance'
+    cmds:
+      - make browser-shim
+
+  smoke-browser:
+    desc: 'Build the browser shim and compile a chart through it in Node'
+    deps: [browser-shim]
+    dir: js
+    cmds:
+      - npm run smoke:browser
+
+  build:
+    desc: 'Build the flint-tui and flint-edit binaries into bin/'
+    cmds:
+      - go build -o bin/flint-tui ./cmd/flint-tui
+      - go build -o bin/flint-edit ./cmd/flint-edit
+    sources:
+      - '**/*.go'
+    generates:
+      - bin/flint-tui
+      - bin/flint-edit
+
+###############################################################################
+# Run
+
+  tui:
+    desc: 'Run flint-tui — e.g. `task tui -- chart.json` or `task tui -- --stdin`'
+    cmds:
+      - go run ./cmd/flint-tui {{.CLI_ARGS}}
+
+  demo:
+    desc: 'Live split-pane editor — type a spec on the left, watch it render on the right'
+    cmds:
+      - go run ./cmd/flint-edit
+
+  edit:
+    desc: 'Alias for demo — the flint-edit split-pane playground'
+    cmds:
+      - go run ./cmd/flint-edit
+
+  clean:
+    desc: 'Remove build artifacts (bin/, js/dist/)'
+    cmds:
+      - rm -rf bin js/dist

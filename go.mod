@@ -1,16 +1,19 @@
 module github.com/NimbleMarkets/flint-ntcharts
 
-go 1.25.0
+go 1.26.4
 
 require (
 	charm.land/bubbletea/v2 v2.0.7
 	charm.land/lipgloss/v2 v2.0.3
 	github.com/charmbracelet/x/ansi v0.11.7
+	github.com/ionut-t/goeditor v0.4.16
 	github.com/tetratelabs/wazero v1.12.0
 )
 
 require (
 	charm.land/bubbles/v2 v2.1.0 // indirect
+	github.com/alecthomas/chroma/v2 v2.26.1 // indirect
+	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20260601155805-6cf7526a1b3f // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
@@ -18,6 +21,7 @@ require (
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
+	github.com/dlclark/regexp2/v2 v2.1.2 // indirect
 	github.com/go-echarts/go-echarts/v2 v2.7.2 // indirect
 	github.com/lrstanley/bubblezone/v2 v2.0.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect

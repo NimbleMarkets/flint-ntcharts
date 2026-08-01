@@ -110,3 +110,12 @@ func renderDoc(compiler Compiler, raw []byte, w, h int) renderedMsg {
 	}
 	return renderedMsg{view: v.View(), warnings: warnings}
 }
+
+// Render compiles and builds raw into a chart view sized to a w×h cell area,
+// returning the rendered terminal string, any compiler warnings, and an error
+// if the document could not be sniffed, compiled, or built. It is the same
+// path the live Model uses, exposed for embedders such as an integrated editor.
+func Render(c Compiler, raw []byte, w, h int) (view string, warnings []envelope.Warning, err error) {
+	m := renderDoc(c, raw, w, h)
+	return m.view, m.warnings, m.err
+}

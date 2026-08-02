@@ -2,6 +2,7 @@ import type { ChartTemplateDef } from "flint-chart";
 import { makeCartesianPivot, makeSortAction } from "flint-chart";
 import { splitSeries } from "../series.js";
 import type { NtInstantiateContext } from "../assemble.js";
+import { pinFittedYDomain } from "../domain.js";
 
 export const ntScatterPlotDef: ChartTemplateDef = {
   chart: "Scatter Plot",
@@ -17,6 +18,7 @@ export const ntScatterPlotDef: ChartTemplateDef = {
     if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
     if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
     if (cs.y?.zero?.zero) emit.y_axis.min = 0;
+    else pinFittedYDomain(emit, cs, table);
 
     const sizeField = cs.size?.field;
     emit.data.series = splitSeries(table, cs, (row) => {

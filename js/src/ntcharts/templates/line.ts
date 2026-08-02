@@ -3,6 +3,7 @@ import { makeCartesianPivot, makeSortAction } from "flint-chart";
 import { splitSeries } from "../series.js";
 import { toMs } from "../temporal.js";
 import type { NtInstantiateContext } from "../assemble.js";
+import { pinFittedYDomain } from "../domain.js";
 
 export const ntLineChartDef: ChartTemplateDef = {
   chart: "Line Chart",
@@ -19,6 +20,7 @@ export const ntLineChartDef: ChartTemplateDef = {
     if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
     if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
     if (cs.y?.zero?.zero) emit.y_axis.min = 0;
+    else pinFittedYDomain(emit, cs, table);
 
     const xField = cs.x!.field;
     emit.data.series = splitSeries(table, cs, (row) => ({

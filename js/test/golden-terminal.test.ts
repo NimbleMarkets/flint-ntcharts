@@ -43,6 +43,15 @@ describe("golden-terminal: line-temporal", () => {
     expect(out.data.series.length).toBeGreaterThan(0);
     expectGolden("line-temporal", out, "terminal");
   });
+
+  it("pins a padded, fitted y-domain (zero excluded for price lines)", () => {
+    const out = assembleFixture("line-temporal", "terminal");
+    // Fixture y values: 104.2..119.3 (min 101.4? no — see below). Data:
+    // [104.2, 108.9, 101.4, 115.7, 119.3, 112.8] → min 101.4, max 119.3,
+    // span 17.9, pad 5% = 0.895.
+    expect(out.y_axis?.min).toBeCloseTo(100.505, 3);
+    expect(out.y_axis?.max).toBeCloseTo(120.195, 3);
+  });
 });
 
 describe("golden-terminal: scatter", () => {

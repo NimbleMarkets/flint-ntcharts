@@ -44,7 +44,9 @@
     }
   },
   "y_axis": {
-    "title": "value"
+    "title": "value",
+    "min": 100.50500000000001,
+    "max": 120.195
   },
   "_width": 345,
   "_height": 300

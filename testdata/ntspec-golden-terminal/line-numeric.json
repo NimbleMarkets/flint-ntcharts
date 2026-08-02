@@ -36,7 +36,9 @@
     "title": "trial"
   },
   "y_axis": {
-    "title": "score"
+    "title": "score",
+    "min": 0.40399999999999997,
+    "max": 0.756
   },
   "_width": 34,
   "_height": 20

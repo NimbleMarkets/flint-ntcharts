@@ -53,7 +53,9 @@
     "title": "weight"
   },
   "y_axis": {
-    "title": "mpg"
+    "title": "mpg",
+    "min": 15.67,
+    "max": 33.93
   },
   "options": {
     "show_legend": true

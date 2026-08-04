@@ -60,6 +60,7 @@ export interface NtOptions {
   show_grid?: boolean;
   orientation?: "vertical" | "horizontal";
   stacked?: boolean;
+  candle_style?: "line" | "block";
 }
 
 export interface NtTheme {

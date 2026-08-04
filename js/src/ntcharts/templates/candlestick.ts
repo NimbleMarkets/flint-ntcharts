@@ -71,5 +71,20 @@ export const ntCandlestickChartDef: ChartTemplateDef = {
     // the frozen emission semantics for this template are single-series).
     emit.data.series = [{ name: xField, ohlc: kept }];
     emit.theme = { ...emit.theme, palette: OHLC_PALETTE };
+
+    // chartProperties passes through unvalidated in this backend (see the
+    // "Deviations" note in ../shims.ts); candleStyle is the one property
+    // this template honors: "line" | "block" map to ntcharts-spec
+    // options.candle_style, anything else is silently ignored.
+    //
+    // NOTE (signature delta from brief): the value lives on `ctx`
+    // (instantiate's 2nd arg, NtInstantiateContext.chartProperties), not on
+    // `_spec` (instantiate's 1st arg is actually `emit`, the NtSpec being
+    // built, which has no chartProperties field) — verified empirically via
+    // assemble.ts's `template.instantiate(emit as any, ctx as any)` call.
+    const candleStyle = ctx.chartProperties?.candleStyle;
+    if (candleStyle === "line" || candleStyle === "block") {
+      emit.options = { ...emit.options, candle_style: candleStyle };
+    }
   },
 };

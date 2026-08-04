@@ -54,6 +54,7 @@ var examples = []example{
   ]},
   "chart_spec": {
     "chartType": "Candlestick Chart",
+    "chartProperties": { "candleStyle": "block" },
     "encodings": {
       "x": {"field": "date"},
       "open": {"field": "open"}, "high": {"field": "high"},

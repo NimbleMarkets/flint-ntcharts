@@ -2,11 +2,11 @@ import {
   resolveChannelSemantics, computeZeroDecision, convertTemporalData,
   computeChannelBudgets, filterOverflow, computeLayout,
   applyPivot, applyEncodingOverrides, normalizeStaticSeries,
-} from "flint-chart";
+} from "flint-chart/core";
 import type {
   ChartAssemblyInput, ChartTemplateDef, ChannelSemantics, ChartWarning,
   LayoutResult, AssembleOptions, LayoutDeclaration,
-} from "flint-chart";
+} from "flint-chart/core";
 import { ntGetTemplateDef, ntSupportedChartTypes } from "./templates/index.js";
 import { resolveBaseSizeShim, deriveStretchCapsShim, applyAggregationShim } from "./shims.js";
 import { formatSpecToNt, d3TimeToGoLayout } from "./format.js";
@@ -92,7 +92,10 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
   // of mark types (per node_modules/flint-chart/dist/core/index.d.ts), not an
   // array as the task brief's transcription suggested.
   const overflow = filterOverflow(channelSemantics, declaration, encodings, convertedData, budgets, new Set([markType]));
-  warnings.push(...overflow.warnings, ...overflow.truncations);
+  // `truncations` restates every entry of `warnings` with layout bookkeeping
+  // (keptValues, placeholder) attached; surfacing both would report each
+  // overflow twice.
+  warnings.push(...overflow.warnings);
   // NOTE (signature delta): OverflowResult exposes the post-overflow rows as
   // `filteredData`, not `values` (the brief's field name was wrong).
   const layout = computeLayout(channelSemantics, declaration, overflow.filteredData, baseSize, options, budgets.facetGrid);
@@ -108,8 +111,8 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
     height: Math.max(4, Math.round(layout.subplotHeight)),
     data: { series: [] },
   };
-  // NOTE (bounded adaptation): ChartAssemblyInput.chart_spec has no `title`
-  // field in the installed .d.ts, so we don't set emit.title here.
+  if (input.chart_spec.title) emit.title = input.chart_spec.title;
+  if (input.chart_spec.subtitle) emit.subtitle = input.chart_spec.subtitle;
   const ctx: NtInstantiateContext = {
     channelSemantics, layout, table: overflow.filteredData, encodings,
     chartProperties: input.chart_spec.chartProperties, canvasSize: baseSize,

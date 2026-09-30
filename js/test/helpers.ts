@@ -18,6 +18,13 @@ const goldenDirs: Record<string, string> = {
   terminal: fileURLToPath(new URL("../../testdata/ntspec-golden-terminal/", import.meta.url)),
 };
 
+// Identity of a warning as a reader sees it. flint's filterOverflow returns
+// the same overflow both in `warnings` and, with extra bookkeeping fields
+// (keptValues, placeholder), in `truncations`; JSON equality would miss that.
+export function warningKey(w: { code?: string; channel?: string; field?: string; message: string }): string {
+  return [w.code, w.channel, w.field, w.message].join("|");
+}
+
 export function assembleFixture(name: string, dir: string = "default") {
   const base = fixtureDirs[dir];
   const input = JSON.parse(readFileSync(`${base}${name}.json`, "utf8"));

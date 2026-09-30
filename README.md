@@ -235,7 +235,7 @@ cat chart.json > watched.json
 
 ## Requirements
 
-- Go >= 1.25 (required by `wazero`)
+- Go >= 1.26.8 (the floor set by the `ntcharts` sibling; `wazero` itself needs 1.25)
 - Node >= 20
 - `gh` CLI on your `PATH` if you need `make wasm` to fetch `bin/javy` (auto-detects
   macOS/Linux, arm64/x86_64 via `uname`; on any other platform, set `JAVY` to a pre-installed
@@ -267,9 +267,9 @@ pushed remote the workflow can check out alongside this one. The workflow probes
 `../ntcharts` in a "Check ntcharts sibling" step and skips the single `go test ./...` step
 with a `::warning::` annotation when it's absent, rather than hard-failing the whole run —
 there is no longer a Go test package in this module that can run without the sibling. Revisit
-this guard once `../ntcharts` is available in CI (checking out the sibling repo explicitly, or
-vendoring it). This repo itself has no remote yet either, so the workflow's first real
-execution happens on the first push.
+this guard once a tagged `ntcharts` release contains `spec` and the `replace` can go (the
+intended end state is a plain `require`, no sibling checkout, and no guard). The workflow has
+not yet had a real execution: this repository has not been pushed.
 
 ## Phase 3: TypeScript → ntcharts-spec backend
 

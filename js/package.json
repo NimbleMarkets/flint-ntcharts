@@ -1,6 +1,7 @@
 {
   "name": "@nimblemarkets/flint-ntcharts",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "// exports": "placeholder for the future ntcharts-spec backend entry point; not published yet (private: true) -- revisit exports/main when this package is prepared for npm publish",
   "exports": {

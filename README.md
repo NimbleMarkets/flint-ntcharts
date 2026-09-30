@@ -389,3 +389,12 @@ left in place rather than stripped.
   **not applied** here. See the "Deviations" note at the top of `js/src/ntcharts/shims.ts` for
   the full list of intentionally-unshimmed/unimplemented upstream utilities
   (`normalizeChartProperties`, `computeMinSubplotDimensions`, `decideColorMaps`).
+
+## License
+
+Released under the [MIT License](./LICENSE.txt), Copyright (c) 2026 Neomantra Corp.
+
+Its upstream dependencies carry their own licenses:
+[flint-chart](https://github.com/NimbleMarkets/flint-chart) is MIT, Copyright (c) Microsoft
+Corporation; [ntcharts](https://github.com/NimbleMarkets/ntcharts) is MIT, Copyright (c)
+2024-2026 Neomantra Corp.

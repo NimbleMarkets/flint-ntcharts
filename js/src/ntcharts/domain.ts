@@ -1,4 +1,4 @@
-import { computePaddedDomain } from "flint-chart";
+import { computePaddedDomain } from "flint-chart/core";
 
 // pinFittedYDomain pins emit.y_axis.min/max to a padded data-fitted domain
 // when flint's zero-decision EXCLUDES zero. Without the pin, ntcharts'

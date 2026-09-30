@@ -1,4 +1,4 @@
-import type { ChartTemplateDef } from "flint-chart";
+import type { ChartTemplateDef } from "flint-chart/core";
 import { ntBarChartDef } from "./bar.js";
 import { ntStackedBarChartDef } from "./stacked-bar.js";
 import { ntLineChartDef } from "./line.js";

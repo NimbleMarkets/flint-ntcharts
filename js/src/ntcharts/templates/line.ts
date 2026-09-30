@@ -1,5 +1,5 @@
-import type { ChartTemplateDef } from "flint-chart";
-import { makeCartesianPivot, makeSortAction } from "flint-chart";
+import type { ChartTemplateDef } from "flint-chart/core";
+import { makeCartesianPivot, makeSortAction } from "flint-chart/core";
 import { splitSeries } from "../series.js";
 import { toMs } from "../temporal.js";
 import type { NtInstantiateContext } from "../assemble.js";

@@ -1,4 +1,4 @@
-import type { ChartTemplateDef } from "flint-chart";
+import type { ChartTemplateDef } from "flint-chart/core";
 import { toMs } from "../temporal.js";
 import type { NtInstantiateContext } from "../assemble.js";
 import type { NtOHLCPoint } from "../types.js";

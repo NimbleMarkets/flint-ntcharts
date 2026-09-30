@@ -1,4 +1,4 @@
-import type { FormatSpec, ChartWarning } from "flint-chart";
+import type { FormatSpec, ChartWarning } from "flint-chart/core";
 import type { NtFormat } from "./types.js";
 
 type Warn = (w: ChartWarning) => void;

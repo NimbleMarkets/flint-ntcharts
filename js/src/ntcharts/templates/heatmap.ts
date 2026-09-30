@@ -1,5 +1,5 @@
-import type { ChartTemplateDef } from "flint-chart";
-import { detectBandedAxisFromSemantics } from "flint-chart";
+import type { ChartTemplateDef } from "flint-chart/core";
+import { detectBandedAxisFromSemantics } from "flint-chart/core";
 import { gradientForScheme } from "../colormap.js";
 import type { NtInstantiateContext } from "../assemble.js";
 

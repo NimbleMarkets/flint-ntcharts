@@ -1,4 +1,4 @@
-import type { ChannelSemantics } from "flint-chart";
+import type { ChannelSemantics } from "flint-chart/core";
 import { paletteForScheme } from "./colormap.js";
 import type { NtSeries, NtDataPoint } from "./types.js";
 

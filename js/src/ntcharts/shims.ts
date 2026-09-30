@@ -13,7 +13,7 @@
 //   - decideColorMaps is intentionally unimplemented; superseded here by
 //     this package's own colormap.ts (gradientForScheme / palette
 //     selection), which serves the terminal ntcharts-spec color needs.
-import type { ChartEncoding } from "flint-chart";
+import type { ChartEncoding } from "flint-chart/core";
 
 export interface Size { width: number; height: number; }
 

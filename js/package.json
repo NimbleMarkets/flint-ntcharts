@@ -13,10 +13,11 @@
     "gen-expected": "tsx scripts/node-runner.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "smoke:browser": "node scripts/node-smoke.mjs"
+    "smoke:browser": "node scripts/node-smoke.mjs",
+    "corpus:dump": "tsx scripts/corpus-dump.ts"
   },
   "dependencies": {
-    "flint-chart": "^0.2.1"
+    "flint-chart": "0.5.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

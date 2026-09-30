@@ -1,5 +1,5 @@
-import type { ChartTemplateDef } from "flint-chart";
-import { detectBandedAxisFromSemantics, makeCartesianPivot, makeSortAction } from "flint-chart";
+import type { ChartTemplateDef } from "flint-chart/core";
+import { detectBandedAxisFromSemantics, makeCartesianPivot, makeSortAction } from "flint-chart/core";
 import { splitSeries } from "../series.js";
 import type { NtInstantiateContext } from "../assemble.js";
 

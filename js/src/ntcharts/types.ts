@@ -86,5 +86,5 @@ export interface NtSpec {
   theme?: NtTheme;
 }
 
-import type { ChartWarning } from "flint-chart";
+import type { ChartWarning } from "flint-chart/core";
 export type NtSpecOut = NtSpec & { _warnings?: ChartWarning[]; _width?: number; _height?: number };

@@ -108,11 +108,17 @@ committed wasm matches a given `js/` checkout without rebuilding it:
 
 ```
 javy: javy 9.0.0
-flint-chart: 0.2.1
-bundle-sha256: 783631d9be839b99ca816ec3aeb06c284240a96f3e53f982bc9af52f979a9cc2
-bundle-bytes: 675508
-wasm-sha256: 537c886e481ebbd852e9836b2089a5ea2eb60ce07dfba7c4add797cda1fc5cc8
+flint-chart: 0.5.1
+bundle-sha256: 91f06b82bef1e6e460b4d038932ea60e2e15595be2b35b8e3dc9cebf0bcb8155
+bundle-bytes: 232951
+wasm-sha256: b25adf3271b6d60fe1b53d86df8e79e9f25692ada9e633683a9af9e794c57c2e
 ```
+
+(The values above are a snapshot; the committed file is authoritative.) The bundle is small
+because everything imports from the `flint-chart/core` subpath rather than the package root —
+the root barrel drags in the Vega-Lite, ECharts, Plotly and Excel backends plus the theme
+presets, which quadruples the bundle (about 1 MB at 0.5.1) for code the terminal backend never
+calls.
 
 `bundle-sha256` is also re-derived and checked in CI (see "Continuous Integration" below): the
 `Wasm provenance check` step rebuilds the esbuild bundle (but not the wasm module itself, no
@@ -281,6 +287,15 @@ instead of a Vega-Lite spec. `assembleNtcharts` (`js/src/ntcharts/assemble.ts`) 
 point: given a flint `ChartAssemblyInput`, it runs the shared flint-chart layout phases, then
 hands off to a per-chart-type template (`js/src/ntcharts/templates/`) that fills in the
 `NtSpec` fields (`type`, `data.series`, `x_axis`, `y_axis`, `heat`, `options`, `theme`).
+`chart_spec.title` and `chart_spec.subtitle` pass through to `NtSpec.title` / `subtitle`.
+
+The pinned `flint-chart` version is exact (`0.5.1` in `js/package.json`), not a caret range,
+because upstream behaviour moves between minors without a type change: 0.5.1 renamed the
+categorical scheme for name-like fields (`set2` → `tableau10`), introduced the `blueorange`
+diverging scheme, and changed overflow truncation from "top N by value" to "first N in sort
+order". Bumping it is a deliberate step: update the pin, run the suite, review what the
+[upstream corpus](#running-the-typescript-test-suite) says changed, regenerate goldens, then
+`make wasm`.
 
 ### Supported chart types
 
@@ -349,6 +364,25 @@ passed through verbatim with an `info`-severity `time-format-partial` warning.
 cd js && npx vitest run
 ```
 
+Beyond the hand-written fixtures under `testdata/`, `js/test/corpus.test.ts` pushes every
+case in flint-chart's own test corpus (`flint-chart/test-data`) for each registered chart
+type through `compileToNtSpec`, at pixel scale and at the 64x20 terminal default, and
+requires a well-formed envelope with no error and no duplicated warning. It is the
+"semantic re-vendor guard": an upstream change that breaks a case fails here, before the
+wasm rebuild. `js/test/colormap.test.ts` likewise drives flint's colour-scheme recommender
+across the whole semantic-type registry and fails on any scheme name `colormap.ts` doesn't
+know, so a renamed scheme can't silently fall back to viridis.
+
+To see *what* changed across a `flint-chart` bump when everything still compiles:
+
+```sh
+cd js
+npm run corpus:dump -- /tmp/before.json
+npm install --save-exact flint-chart@<new>
+npm run corpus:dump -- /tmp/after.json
+diff <(jq -S . /tmp/before.json) <(jq -S . /tmp/after.json)
+```
+
 ### Cross-validating against the real Go renderer
 
 `speccheck/speccheck_test.go` proves the *other* end of the pipeline: every golden JSON file
@@ -389,6 +423,10 @@ left in place rather than stripped.
   **not applied** here. See the "Deviations" note at the top of `js/src/ntcharts/shims.ts` for
   the full list of intentionally-unshimmed/unimplemented upstream utilities
   (`normalizeChartProperties`, `computeMinSubplotDimensions`, `decideColorMaps`).
+- **Discrete-axis overflow keeps at least 60 values, whatever the width.** flint's
+  `filterOverflow` floor means a bar chart with 40 categories at `baseSize.width: 20` is
+  emitted with all 40 labels; how they fit is left to the ntcharts renderer. Only past the
+  floor does truncation (and the single `overflow` warning) kick in.
 
 ## License
 

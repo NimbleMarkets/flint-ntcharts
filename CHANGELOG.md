@@ -1,15 +1,14 @@
 # CHANGELOG
 
-## Unreleased
+## v0.2.0 (2026-10-01)
 
- * New chart types: ECDF Plot, Connected Scatter Plot, and Bubble Chart (drawn as a scatter plot; the size channel is reported with an `info` warning and not shown).
- * New chart types: Histogram, Area Chart (drawn as a line chart, no fill), Lollipop Chart (drawn as a bar chart) and Calendar Heatmap. Approximated types report an `info` warning.
- * Requires ntcharts v2.6.0 (log axes, labelled and filled heatmaps, connected numeric line charts).
- * `logScale_x` / `logScale_y` now draw a logarithmic axis on line, scatter, time-series and candlestick charts instead of warning; charts or data a log axis cannot show still warn and stay linear.
+ * Requires ntcharts v2.6.0.
+ * New chart types: ECDF Plot, Connected Scatter Plot, Histogram, Calendar Heatmap, and three approximations that report an `info` warning: Bubble Chart (a scatter plot, size not shown), Area Chart (a line chart, no fill) and Lollipop Chart (a bar chart).
+ * `logScale_x` / `logScale_y` draw a logarithmic axis on line, scatter, time-series and candlestick charts. Charts or data a log axis cannot show still warn and stay linear.
+ * Line, scatter and sparkline charts, and heatmaps with numeric-looking column names, fill the size they are asked for instead of about 45% of the width. **Behavior change:** the compiled spec's `width` / `height` for those charts are larger.
+ * Fix bar charts with many categories rendering as an empty axis: they are truncated to the bars the terminal can draw, with an `overflow` warning.
+ * `includeZero_y` is honoured on line, time-series and scatter charts. Properties that cannot be honoured (`includeZero_x`, `includeZero_y` on bars) now produce a warning instead of being ignored silently.
  * `flint-edit` gains Log Scale, Heatmap, Histogram and Calendar Heatmap examples.
- * Line, scatter and sparkline charts, and heatmaps with numeric-looking column names, now fill the size they are asked for. flint's layout used to shrink them to about 45% of the requested width. **Behavior change:** the compiled spec's `width` / `height` for those charts are larger.
- * Fix bar charts with many categories rendering as an empty axis: charts are truncated to the bars the terminal can draw (half the width, or half the height for horizontal bars), with an `overflow` warning.
- * `includeZero_y` is honoured on line, time-series and scatter charts. Where a property cannot be honoured (`includeZero_x`, `includeZero_y` on bars, `logScale_x`/`logScale_y`) the envelope now carries a warning instead of ignoring it silently.
 
 ## v0.1.0 (2026-09-30)
 

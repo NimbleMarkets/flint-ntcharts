@@ -42,7 +42,7 @@ jobs:
       # compile/ decodes the envelope's spec field into ntcharts' spec.Spec and
       # speccheck/ renders every golden through the real ntcharts renderer;
       # both resolve ntcharts from the published module (go.mod requires
-      # github.com/NimbleMarkets/ntcharts/v2 >= v2.5.0, the first release
-      # that ships the spec package), so no sibling checkout is involved.
+      # github.com/NimbleMarkets/ntcharts/v2 >= v2.6.0, which has the spec
+      # package and the log-axis and heatmap support it emits), so no sibling checkout is involved.
       - name: Go build, vet, tests
         run: go build ./... && go vet ./... && go test ./...

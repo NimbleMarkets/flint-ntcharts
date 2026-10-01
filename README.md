@@ -50,7 +50,7 @@ flint-chart:
 
 `cmd/flint-edit` (`go install …/cmd/flint-edit@latest`) is a split-pane playground: edit the
 JSON on the left, watch the chart on the right. `ctrl+n` steps through the built-in examples
-(bar, time series, candlestick); `ctrl+1`‥`3` / `alt+1`‥`3` jump to one directly in terminals
+(bar, time series, candlestick, log scale, heatmap, histogram, calendar heatmap); `ctrl+1`‥`7` / `alt+1`‥`7` jump to one directly in terminals
 that deliver those chords.
 
 To work on the repo itself: the compiled `flint.wasm` module and its build provenance

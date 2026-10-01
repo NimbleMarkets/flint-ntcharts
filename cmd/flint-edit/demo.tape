@@ -34,7 +34,11 @@ Type "320"
 Sleep 2.5s
 
 # ctrl+n steps through the built-in examples: a time series, candlesticks,
-# a log-scale line, then a heatmap.
+# a log-scale line, a heatmap, a histogram, then a calendar heatmap.
+Ctrl+N
+Sleep 2.5s
+Ctrl+N
+Sleep 2.5s
 Ctrl+N
 Sleep 2.5s
 Ctrl+N

@@ -103,4 +103,39 @@ var examples = []example{
     "encodings": { "x": {"field": "when"}, "y": {"field": "day"}, "color": {"field": "visits"} }
   }
 }`},
+	{name: "Histogram", src: `{
+  "data": { "values": [
+    {"latency_ms": 113}, {"latency_ms": 134}, {"latency_ms": 114}, {"latency_ms": 111}, {"latency_ms": 94},
+    {"latency_ms": 114}, {"latency_ms": 151}, {"latency_ms": 132}, {"latency_ms": 149}, {"latency_ms": 127},
+    {"latency_ms": 131}, {"latency_ms": 125}, {"latency_ms": 73}, {"latency_ms": 144}, {"latency_ms": 134},
+    {"latency_ms": 134}, {"latency_ms": 73}, {"latency_ms": 71}, {"latency_ms": 95}, {"latency_ms": 107},
+    {"latency_ms": 129}, {"latency_ms": 119}, {"latency_ms": 135}, {"latency_ms": 102}, {"latency_ms": 129},
+    {"latency_ms": 131}, {"latency_ms": 101}, {"latency_ms": 168}, {"latency_ms": 136}, {"latency_ms": 154},
+    {"latency_ms": 103}, {"latency_ms": 99}, {"latency_ms": 110}, {"latency_ms": 117}, {"latency_ms": 138},
+    {"latency_ms": 127}, {"latency_ms": 107}, {"latency_ms": 93}, {"latency_ms": 105}, {"latency_ms": 154},
+    {"latency_ms": 240}, {"latency_ms": 266}, {"latency_ms": 271}, {"latency_ms": 223}, {"latency_ms": 261},
+    {"latency_ms": 293}, {"latency_ms": 210}, {"latency_ms": 252}, {"latency_ms": 257}, {"latency_ms": 240}
+  ]},
+  "chart_spec": {
+    "chartType": "Histogram",
+    "chartProperties": { "binCount": 12 },
+    "encodings": { "x": {"field": "latency_ms"} }
+  }
+}`},
+	{name: "Calendar Heatmap", src: `{
+  "data": { "values": [
+    {"day": "2026-03-02", "commits": 5}, {"day": "2026-03-03", "commits": 3}, {"day": "2026-03-04", "commits": 0}, {"day": "2026-03-05", "commits": 6}, {"day": "2026-03-06", "commits": 6}, {"day": "2026-03-07", "commits": 2}, {"day": "2026-03-08", "commits": 3},
+    {"day": "2026-03-09", "commits": 5}, {"day": "2026-03-10", "commits": 4}, {"day": "2026-03-11", "commits": 0}, {"day": "2026-03-12", "commits": 5}, {"day": "2026-03-13", "commits": 2}, {"day": "2026-03-14", "commits": 0}, {"day": "2026-03-15", "commits": 0},
+    {"day": "2026-03-16", "commits": 1}, {"day": "2026-03-17", "commits": 2}, {"day": "2026-03-18", "commits": 7}, {"day": "2026-03-19", "commits": 0}, {"day": "2026-03-20", "commits": 0}, {"day": "2026-03-21", "commits": 1}, {"day": "2026-03-22", "commits": 3},
+    {"day": "2026-03-23", "commits": 0}, {"day": "2026-03-24", "commits": 0}, {"day": "2026-03-25", "commits": 0}, {"day": "2026-03-26", "commits": 0}, {"day": "2026-03-27", "commits": 0}, {"day": "2026-03-28", "commits": 0}, {"day": "2026-03-29", "commits": 0},
+    {"day": "2026-03-30", "commits": 7}, {"day": "2026-03-31", "commits": 4}, {"day": "2026-04-01", "commits": 4}, {"day": "2026-04-02", "commits": 5}, {"day": "2026-04-03", "commits": 8}, {"day": "2026-04-04", "commits": 1}, {"day": "2026-04-05", "commits": 1},
+    {"day": "2026-04-06", "commits": 5}, {"day": "2026-04-07", "commits": 0}, {"day": "2026-04-08", "commits": 7}, {"day": "2026-04-09", "commits": 6}, {"day": "2026-04-10", "commits": 5}, {"day": "2026-04-11", "commits": 0}, {"day": "2026-04-12", "commits": 0},
+    {"day": "2026-04-13", "commits": 6}, {"day": "2026-04-14", "commits": 0}, {"day": "2026-04-15", "commits": 3}, {"day": "2026-04-16", "commits": 7}, {"day": "2026-04-17", "commits": 0}, {"day": "2026-04-18", "commits": 3}, {"day": "2026-04-19", "commits": 1},
+    {"day": "2026-04-20", "commits": 3}, {"day": "2026-04-21", "commits": 4}, {"day": "2026-04-22", "commits": 5}, {"day": "2026-04-23", "commits": 4}, {"day": "2026-04-24", "commits": 7}, {"day": "2026-04-25", "commits": 0}, {"day": "2026-04-26", "commits": 0}
+  ]},
+  "chart_spec": {
+    "chartType": "Calendar Heatmap",
+    "encodings": { "x": {"field": "day"}, "color": {"field": "commits"} }
+  }
+}`},
 }

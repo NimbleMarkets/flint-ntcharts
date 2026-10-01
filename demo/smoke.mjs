@@ -16,26 +16,36 @@ go.run(instance); // blocks inside the Go program; do not await
 const strip = (s) => s.replace(/\x1b\[[0-9;?]*[ -\/]*[@-~]|\x1b\][^\x07]*\x07/g, "");
 let screen = "";
 const drain = () => { const d = globalThis.bubbletea_read(); if (d) screen += d; };
-const settle = async (ms = 400) => { await new Promise((r) => setTimeout(r, ms)); drain(); };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const fail = (msg) => { console.error("FAIL:", msg, "\n--- screen tail ---\n" + strip(screen).slice(-600)); process.exit(1); };
-const expect = (re, what) => { if (!re.test(strip(screen))) fail(`expected ${what}`); console.log("ok  ", what); };
 
-await settle(300);
+// waitFor polls the program's output until re matches or the timeout passes,
+// so the test is as fast as the machine allows and does not flake under load.
+const waitFor = async (re, what, timeoutMs = 15000) => {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    drain();
+    if (re.test(strip(screen))) { console.log("ok  ", what); return; }
+    if (Date.now() > deadline) fail(`expected ${what}`);
+    await sleep(50);
+  }
+};
+
+await sleep(300);
 globalThis.bubbletea_resize(110, 30);
-await settle(1500);
-expect(/compiled ok/, "first example compiles");
-expect(/Jan[\s\S]*Feb[\s\S]*Mar/, "bar chart category labels drawn");
+await waitFor(/compiled ok/, "first example compiles");
+await waitFor(/Jan[\s\S]*Feb[\s\S]*Mar/, "bar chart category labels drawn");
 
 screen = "";
 globalThis.bubbletea_write("\x0e"); // ctrl+n
-await settle(1500);
-expect(/compiled ok/, "ctrl+n loads the next example cleanly");
-expect(/Timeseries Line|price/, "the time series example is showing");
+await waitFor(/price/, "ctrl+n loads the next example (its spec shows in the editor)");
+// The status line may not be redrawn (the renderer only writes changed cells),
+// so check the new chart itself: the time series has dollar Y labels.
+await waitFor(/\$1[0-2]\d/, "the time series chart is drawn with price labels");
 
 screen = "";
 globalThis.bubbletea_write("x");
-await settle(1000);
-expect(/invalid JSON/, "a bad edit reports invalid JSON on the status line");
+await waitFor(/invalid JSON/, "a bad edit reports invalid JSON on the status line");
 
 console.log("smoke ok");
 process.exit(0);

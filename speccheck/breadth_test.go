@@ -2,8 +2,10 @@ package speccheck
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/charmbracelet/x/ansi"
 
@@ -22,6 +24,15 @@ func TestBreadthChartsDrawThroughTheRenderer(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer r.Close(ctx)
+
+	calendar := func(days int) string {
+		var vs []string
+		start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+		for i := 0; i < days; i++ {
+			vs = append(vs, fmt.Sprintf(`{"d":%q,"n":%d}`, start.AddDate(0, 0, i).Format("2006-01-02"), (i*7)%13+i%3))
+		}
+		return `{"data":{"values":[` + strings.Join(vs, ",") + `]},"chart_spec":{"chartType":"Calendar Heatmap","encodings":{"x":{"field":"d"},"color":{"field":"n"}}}}`
+	}
 
 	for _, tc := range []struct {
 		name  string
@@ -58,6 +69,8 @@ func TestBreadthChartsDrawThroughTheRenderer(t *testing.T) {
 			  "chart_spec":{"chartType":"Lollipop Chart","encodings":{"x":{"field":"c"},"y":{"field":"n"}}}}`,
 			[]string{"a", "b", "c"},
 		},
+		{"calendar, 12 weeks", calendar(84), []string{"Mon", "Sun", "Jan", "Feb", "Mar"}},
+		{"calendar, a year", calendar(365), []string{"Mon", "Sun", "Jan"}},
 		{
 			"bubble",
 			`{"data":{"values":[{"x":1,"y":1,"s":5},{"x":4,"y":3,"s":50},{"x":2,"y":5,"s":20}]},

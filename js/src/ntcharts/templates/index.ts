@@ -12,6 +12,7 @@ import { ntBubbleChartDef } from "./bubble.js";
 import { ntHistogramDef } from "./histogram.js";
 import { ntAreaChartDef } from "./area.js";
 import { ntLollipopChartDef } from "./lollipop.js";
+import { ntCalendarHeatmapDef } from "./calendar-heatmap.js";
 
 const defs: ChartTemplateDef[] = [];
 
@@ -35,3 +36,4 @@ ntRegister(ntBubbleChartDef);
 ntRegister(ntHistogramDef);
 ntRegister(ntAreaChartDef);
 ntRegister(ntLollipopChartDef);
+ntRegister(ntCalendarHeatmapDef);

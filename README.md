@@ -7,6 +7,12 @@ the flint → ntcharts terminal-UI compile backend. The TypeScript assembly pipe
 WebAssembly module and run from Go via [wazero](https://github.com/tetratelabs/wazero), so no
 Node.js runtime is required at execution time.
 
+<img src="cmd/flint-edit/demo.gif" alt="flint-edit: edit a flint chart spec on the left, the terminal chart re-renders on the right" width="900"/>
+
+*`flint-edit`: a flint spec on the left, its terminal chart on the right, recompiled on every
+keystroke. Recorded from [`cmd/flint-edit/demo.tape`](./cmd/flint-edit/demo.tape) with
+[VHS](https://github.com/charmbracelet/vhs) — `task gif` regenerates it.*
+
 This started as a Phase 1 feasibility spike proving the wasm approach viable, using a
 stand-in Vega-Lite compile as the test payload before the real ntcharts-spec output existed —
 that wording is now historical; see [SPIKE-RESULTS.md](./SPIKE-RESULTS.md), a dated go/no-go
@@ -43,7 +49,9 @@ flint-chart:
 ```
 
 `cmd/flint-edit` (`go install …/cmd/flint-edit@latest`) is a split-pane playground: edit the
-JSON on the left, watch the chart on the right.
+JSON on the left, watch the chart on the right. `ctrl+n` steps through the built-in examples
+(bar, time series, candlestick); `ctrl+1`‥`3` / `alt+1`‥`3` jump to one directly in terminals
+that deliver those chords.
 
 To work on the repo itself: the compiled `flint.wasm` module and its build provenance
 (`compile/flint.wasm.buildinfo`) are committed, so no *build* step (no Javy, no `js/` install)

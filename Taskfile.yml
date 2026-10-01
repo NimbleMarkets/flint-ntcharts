@@ -126,6 +126,13 @@ tasks:
     cmds:
       - go run ./cmd/flint-edit
 
+  gif:
+    desc: 'Record cmd/flint-edit/demo.gif from its VHS tape (needs vhs, ttyd, ffmpeg)'
+    deps: [build]
+    cmds:
+      - vhs validate cmd/flint-edit/demo.tape
+      - vhs cmd/flint-edit/demo.tape
+
   clean:
     desc: 'Remove build artifacts (bin/, js/dist/)'
     cmds:

@@ -276,10 +276,15 @@ Type in the left pane (start with the seeded bar chart), and the right pane redr
 `"Bar Chart"` to `"Sparkline"` or `"Candlestick Chart"`, break the JSON to see the error land on the
 status line while the last good chart stays up, resize the window to watch it re-fit. `ctrl+c` quits.
 
-- Press `alt+2` (or `ctrl+2` in a kitty-protocol terminal): the buffer swaps
-  to the Timeseries Line example and the chart re-renders; `alt+3` shows the
-  Candlestick. `alt+1` returns to the Bar Chart. Unbound chords (`alt+9`) do
-  nothing.
+- Press `ctrl+n`: both panes swap to the next built-in example (Bar Chart →
+  Timeseries Line → Candlestick → back to Bar Chart). It works in every
+  terminal.
+- Press `alt+2` (or `ctrl+2` in a kitty-protocol terminal): jumps straight to
+  the Timeseries Line example; `alt+3` shows the Candlestick, `alt+1` the Bar
+  Chart. Unbound chords (`alt+9`) do nothing. On macOS `alt+digit` needs the
+  terminal's "option as meta" setting.
+- `task gif` re-records `cmd/flint-edit/demo.gif` from `demo.tape` — a
+  scripted run of the same steps (edit a value, `ctrl+n`, `ctrl+n`).
 
 The `flint-tui` checks below exercise the same renderer through the file/stdin/socket **hosting** path
 (what agents push to), which the playground doesn't cover.

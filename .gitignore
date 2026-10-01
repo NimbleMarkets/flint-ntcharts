@@ -6,3 +6,4 @@ bin/
 # local override for developing against an unreleased ntcharts (go work init . ../ntcharts)
 go.work
 go.work.sum
+.task/

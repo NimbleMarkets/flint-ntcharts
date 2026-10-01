@@ -32,8 +32,6 @@ require (
 )
 
 require (
-	github.com/NimbleMarkets/ntcharts/v2 v2.0.0
+	github.com/NimbleMarkets/ntcharts/v2 v2.5.0
 	golang.org/x/sys v0.48.0 // indirect
 )
-
-replace github.com/NimbleMarkets/ntcharts/v2 => ../ntcharts

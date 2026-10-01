@@ -73,7 +73,7 @@ func TestViewHasBothPanes(t *testing.T) {
 	if !strings.Contains(v.Content, "│") {
 		t.Fatal("View is missing the pane divider")
 	}
-	if !strings.Contains(v.Content, "ctrl/alt+1·2·3 examples") {
+	if !strings.Contains(v.Content, "ctrl+n next example") {
 		t.Fatal("title bar is missing the example-switcher hint")
 	}
 }
@@ -190,6 +190,39 @@ func TestExampleSwitchRepaintsEditor(t *testing.T) {
 	}
 	if strings.Contains(pane, "revenue") {
 		t.Fatal("after alt+3 the editor pane still shows example 1 (field \"revenue\")")
+	}
+}
+
+// TestNextExampleCycles covers ctrl+n, the chord every terminal delivers
+// (ctrl+digit needs the kitty keyboard protocol, alt+digit needs
+// option-as-meta on macOS): it steps through the examples and wraps.
+func TestNextExampleCycles(t *testing.T) {
+	m := newTestModel(t)
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = next.(model)
+
+	ctrlN := tea.KeyPressMsg{Code: 'n', Mod: tea.ModCtrl}
+	for step, want := range []int{1, 2, 0, 1} {
+		next, cmd := m.Update(ctrlN)
+		m = next.(model)
+		if m.src != examples[want].src {
+			t.Fatalf("ctrl+n step %d: expected example %d (%s)", step+1, want+1, examples[want].name)
+		}
+		if cmd == nil {
+			t.Fatalf("ctrl+n step %d did not fire a render", step+1)
+		}
+		if !strings.Contains(m.msg, examples[want].name) {
+			t.Fatalf("ctrl+n step %d: status %q does not name the example", step+1, m.msg)
+		}
+	}
+
+	// A direct jump resets where ctrl+n continues from.
+	next, _ = m.Update(tea.KeyPressMsg{Code: '3', Mod: tea.ModAlt})
+	m = next.(model)
+	next, _ = m.Update(ctrlN)
+	m = next.(model)
+	if m.src != examples[0].src {
+		t.Fatal("ctrl+n after alt+3 should wrap to example 1")
 	}
 }
 

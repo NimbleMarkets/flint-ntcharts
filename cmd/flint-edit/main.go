@@ -53,6 +53,7 @@ type model struct {
 	msg   string // status line text
 	state int    // 0 pending, 1 ok, 2 warn, 3 error
 	gen   int
+	ex    int // index of the example last loaded; ctrl+n continues from it
 }
 
 func newModel(c tui.Compiler) model {
@@ -139,6 +140,7 @@ func exampleChord(key string) (int, bool) {
 // render. Current edits are discarded — flint-edit is a playground.
 func (m *model) loadExample(i int) tea.Cmd {
 	ex := examples[i]
+	m.ex = i
 	m.ed.SetContent(ex.src)
 	_ = m.ed.SetCursorPositionEnd()
 	// SetContent only swaps the buffer; the editor repaints its viewport at
@@ -171,6 +173,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if i, ok := exampleChord(key); ok && i < len(examples) {
 			return m, m.loadExample(i)
+		}
+		// ctrl+n steps to the next example, wrapping. Unlike the digit chords
+		// it is a plain control byte, so it reaches the program in every
+		// terminal (and in scripted recordings).
+		if key == "ctrl+n" {
+			return m, m.loadExample((m.ex + 1) % len(examples))
 		}
 		// chords past the example list (alt+9, ctrl+9) fall through to the editor,
 		// as do legacy-terminal artifacts for unsupported ctrl+digit (e.g. ctrl+@)
@@ -205,7 +213,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() tea.View {
 	title := titleStyle.Render("flint-edit") +
-		hintStyle.Render("   edit the spec, watch it render  ·  ctrl/alt+1·2·3 examples  ·  ctrl+c quit")
+		hintStyle.Render("   edit the spec, watch it render  ·  ctrl+n next example (or ctrl/alt+1·2·3)  ·  ctrl+c quit")
 
 	chart := m.chart
 	if strings.TrimSpace(chart) == "" {

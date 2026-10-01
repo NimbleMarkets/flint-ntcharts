@@ -1,8 +1,9 @@
 # CHANGELOG
 
-## Unreleased
+## v0.2.1 (2026-10-01)
 
- * `flint-edit` runs in the browser: `demo/` builds it for go-booba, compiling through the booba-shim bridge (`task site`, `task site-serve`).
+ * `flint-edit` now runs in the browser: <https://nimblemarkets.github.io/flint-ntcharts/>. It is built from `demo/` and deployed to GitHub Pages on every push to `main`. `task site` builds it; `task site-serve` serves it locally.
+ * No library or API changes since v0.2.0.
 
 ## v0.2.0 (2026-10-01)
 

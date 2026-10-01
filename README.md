@@ -7,6 +7,9 @@ the flint → ntcharts terminal-UI compile backend. The TypeScript assembly pipe
 WebAssembly module and run from Go via [wazero](https://github.com/tetratelabs/wazero), so no
 Node.js runtime is required at execution time.
 
+**[Try it in your browser →](https://nimblemarkets.github.io/flint-ntcharts/)** — the `flint-edit`
+playground below, running entirely client-side.
+
 <img src="cmd/flint-edit/demo.gif" alt="flint-edit: edit a flint chart spec on the left, the terminal chart re-renders on the right" width="900"/>
 
 *`flint-edit`: a flint spec on the left, its terminal chart on the right, recompiled on every
@@ -48,7 +51,7 @@ flint-chart:
 }
 ```
 
-`cmd/flint-edit` (`go install …/cmd/flint-edit@latest`; also [in the browser](demo/), `task site-serve`) is a split-pane playground: edit the
+`cmd/flint-edit` (`go install …/cmd/flint-edit@latest`; also [in the browser](https://nimblemarkets.github.io/flint-ntcharts/); source in [`demo/`](demo/), `task site-serve` builds it locally) is a split-pane playground: edit the
 JSON on the left, watch the chart on the right. `ctrl+n` steps through the built-in examples
 (bar, time series, candlestick, log scale, heatmap, histogram, calendar heatmap); `ctrl+1`‥`7` / `alt+1`‥`7` jump to one directly in terminals
 that deliver those chords.

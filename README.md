@@ -336,6 +336,9 @@ order". Bumping it is a deliberate step: update the pin, run the suite, review w
 - Heatmap
 - Candlestick Chart
 - Sparkline
+- ECDF Plot (cumulative line; steps are drawn as a smooth rise)
+- Connected Scatter Plot (points joined in `order` channel order)
+- Bubble Chart (drawn as a scatter plot; the size channel is not shown)
 
 Only **"Line Chart"** is a registered `chartType` name in the template registry
 (`js/src/ntcharts/templates/index.ts`) — there is no separate "Timeseries Line Chart" entry.

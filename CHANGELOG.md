@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+ * New chart types: ECDF Plot, Connected Scatter Plot, and Bubble Chart (drawn as a scatter plot; the size channel is reported with an `info` warning and not shown).
  * Requires ntcharts v2.6.0 (log axes, labelled and filled heatmaps, connected numeric line charts).
  * `logScale_x` / `logScale_y` now draw a logarithmic axis on line, scatter, time-series and candlestick charts instead of warning; charts or data a log axis cannot show still warn and stay linear.
  * `flint-edit` gains Log Scale and Heatmap examples.

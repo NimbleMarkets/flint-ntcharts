@@ -15,8 +15,10 @@ const corpus = supportedCorpus();
 describe("upstream test-data corpus", () => {
   it("covers every registered chart type with at least one case", () => {
     const types = new Set(corpus.map((c) => c.chartType));
+    // Bubble Chart is registered but upstream has no test generator for it;
+    // templates-group1.test.ts covers it by hand.
     expect([...types].sort()).toEqual(
-      ["Bar Chart", "Candlestick Chart", "Heatmap", "Line Chart", "Scatter Plot", "Sparkline", "Stacked Bar Chart"],
+      ["Bar Chart", "Candlestick Chart", "Connected Scatter Plot", "ECDF Plot", "Heatmap", "Line Chart", "Scatter Plot", "Sparkline", "Stacked Bar Chart"],
     );
     expect(corpus.length).toBeGreaterThan(50);
   });

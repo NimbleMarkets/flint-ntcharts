@@ -6,6 +6,9 @@ import { ntScatterPlotDef } from "./scatter.js";
 import { ntHeatmapDef } from "./heatmap.js";
 import { ntCandlestickChartDef } from "./candlestick.js";
 import { ntSparklineDef } from "./sparkline.js";
+import { ntEcdfPlotDef } from "./ecdf.js";
+import { ntConnectedScatterDef } from "./connected-scatter.js";
+import { ntBubbleChartDef } from "./bubble.js";
 
 const defs: ChartTemplateDef[] = [];
 
@@ -23,3 +26,6 @@ ntRegister(ntScatterPlotDef);
 ntRegister(ntHeatmapDef);
 ntRegister(ntCandlestickChartDef);
 ntRegister(ntSparklineDef);
+ntRegister(ntEcdfPlotDef);
+ntRegister(ntConnectedScatterDef);
+ntRegister(ntBubbleChartDef);

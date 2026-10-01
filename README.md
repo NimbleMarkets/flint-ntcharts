@@ -357,8 +357,15 @@ All sizes in the assembler are interpreted in **cells** (terminal character colu
 pixels. `resolveBaseSizeShim` (`js/src/ntcharts/shims.ts`) clamps a base size (default 64x20) to
 an optional canvas-size ceiling from the chart spec; `deriveStretchCapsShim` derives
 `maxStretchX`/`maxStretchY` from the same ceiling so flint-chart's shared layout math stretches
-plot regions in cell units. The resulting `layout.subplotWidth` / `subplotHeight` become the
-emitted `NtSpec.width` / `height` (each floored at a minimum of 8x4 cells).
+plot regions in cell units. The emitted `NtSpec.width` / `height` are the larger of the layout's
+`subplotWidth` / `subplotHeight` and the requested base size, floored at a minimum of 8x4 cells.
+
+**Charts fill the size they were asked for.** For a chart with a continuous X axis (line,
+scatter, sparkline, a heatmap with numeric-looking column names) flint's layout shrinks the plot —
+its mark-density and aspect-ratio calculation is designed for pixel canvases and returns about 45%
+of the requested width — so the emitted size is never allowed below the request. Banded charts
+(bars, categorical heatmaps) already fill it; where a `canvasSize` ceiling allows growth, flint's
+larger size still wins.
 
 **Default stretch cap is 1 (no growth beyond the base size).** `TERMINAL_OPTIONS.maxStretch`
 (`js/src/ntcharts/assemble.ts`) is `1`: when a chart spec sets no `canvasSize` ceiling,

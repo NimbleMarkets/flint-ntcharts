@@ -200,7 +200,7 @@ grep wasm-sha256 compile/flint.wasm.buildinfo
 shasum -a 256 compile/flint.wasm | cut -d' ' -f1
 ```
 
-**Expect:** the two hashes are identical (e.g. `8e839bbb6909…`).
+**Expect:** the two hashes are identical (`task provenance` does the same comparison).
 
 ```bash
 cd ~/projects/booba-shim
@@ -208,15 +208,16 @@ grep sha256 web/flintchart/PROVENANCE.txt
 shasum -a 256 web/flintchart/flintchart-shim.js cmd/booba-shim-assets/assets/flintchart/flintchart-shim.js
 ```
 
-**Expect:** the PROVENANCE sha and **both** vendored copies match (e.g. `2c11d949…`). This same
+**Expect:** the PROVENANCE sha and **both** vendored copies match. This same
 check runs automatically as `booba-shim/flintchart`'s `TestVendoredBundlesMatchProvenance`.
+`PROVENANCE.txt` also names the flint-ntcharts release tag the bundle was built from.
 
 > Optional deeper check (needs the `javy` CLI in `bin/`): `make wasm` and `make browser-shim`
-> rebuild the artifacts and must reproduce the same shas from a clean tree.
+> rebuild the artifacts and must reproduce the same shas from a clean clone of that tag.
 
 ---
 
-## 5 · The ntcharts renderer (ntcharts, spec branch)
+## 5 · The ntcharts renderer (optional ntcharts checkout, `v2`)
 
 ```bash
 cd ~/projects/ntcharts
@@ -251,13 +252,15 @@ node examples/flintchart-compile/smoke.mjs
 **Expect:**
 
 ```
-version: flint-ntcharts flint-chart@0.2.1
+version: flint-ntcharts flint-chart@0.5.1
 warnings: 0
 size: { width: 60, height: 16 }
 ```
 
-This loads the exact file a browser would and runs a compile through it — proof the browser path
-produces the same envelope as native.
+(Run `go tool booba-shim-assets examples/flintchart-compile --shim=flintchart` first if
+`examples/flintchart-compile/booba-shim/` is not populated.) This loads the exact file a browser
+would and runs a compile through it. The vendored bundle and the native wasm compiler produce
+byte-identical envelopes for every fixture under `testdata/`.
 
 ---
 

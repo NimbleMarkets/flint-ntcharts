@@ -43,8 +43,10 @@ $(JAVY):
 browser-shim:
 	$(eval FLINT_VER := $(shell cd js && node -e 'const fs=require("fs");console.log(JSON.parse(fs.readFileSync("node_modules/flint-chart/package.json")).version)'))
 	cd js && npx esbuild src/entry-browser.ts --bundle --format=esm --platform=browser --target=es2020 --outfile=dist/flintchart-shim.mjs --define:__FLINTCHART_VERSION__='"flint-chart@$(FLINT_VER)"'
-	@printf 'source: github.com/NimbleMarkets/flint-ntcharts (local)\ncommit: %s\nentry: js/src/entry-browser.ts\nflint-chart: %s\nsha256: %s\nbytes: %s\n' \
+	@printf 'source: https://github.com/NimbleMarkets/flint-ntcharts\nref: %s\ncommit: %s\nentry: js/src/entry-browser.ts\nesbuild: %s\nflint-chart: %s\nsha256: %s\nbytes: %s\n' \
+	  "$$(git describe --tags --always --dirty)" \
 	  "$$(git rev-parse HEAD)$$(test -z "$$(git status --porcelain)" || echo -dirty)" \
+	  "$$(cd js && npx esbuild --version)" \
 	  "$(FLINT_VER)" \
 	  "$$(shasum -a 256 js/dist/flintchart-shim.mjs | cut -d' ' -f1)" \
 	  "$$(wc -c < js/dist/flintchart-shim.mjs | tr -d ' ')" \
@@ -53,3 +55,5 @@ browser-shim:
 # Note: `npm run build:browser` (js/package.json) is for dev builds only and
 # stamps a fixed "dev" version; this Makefile target is the one used for
 # vendoring/release, and stamps the real flint-chart package version above.
+# Vendor into booba-shim only from a clean clone of a release tag: `ref` then
+# reads as the tag (e.g. v0.1.0) with no -dirty suffix.

@@ -3,7 +3,7 @@ module github.com/NimbleMarkets/flint-ntcharts/demo
 go 1.26.8
 
 require (
-	github.com/NimbleMarkets/booba-shim v0.2.0
+	github.com/NimbleMarkets/booba-shim v0.3.0
 	github.com/NimbleMarkets/flint-ntcharts v0.2.0
 	github.com/NimbleMarkets/go-booba v0.7.0
 	github.com/NimbleMarkets/ntcharts/v2 v2.6.0
@@ -37,11 +37,6 @@ require (
 )
 
 replace github.com/NimbleMarkets/flint-ntcharts => ../
-
-// Until a booba-shim release carries the flint-ntcharts v0.2.0 bundle, build
-// against a local checkout. Delete this line once that release is tagged and
-// require it above.
-replace github.com/NimbleMarkets/booba-shim => ../../booba-shim
 
 replace charm.land/bubbletea/v2 => github.com/neomantra/bubbletea/v2 v2.0.0-20260928192001-1b36865b418a
 

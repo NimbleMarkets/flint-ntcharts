@@ -459,9 +459,9 @@ left in place rather than stripped.
 
 ## License
 
-Released under the [MIT License](./LICENSE.txt), Copyright (c) 2026 Neomantra Corp.
+Released under the [MIT License](./LICENSE.txt).
 
-Its upstream dependencies carry their own licenses:
-[flint-chart](https://github.com/NimbleMarkets/flint-chart) is MIT, Copyright (c) Microsoft
-Corporation; [ntcharts](https://github.com/NimbleMarkets/ntcharts) is MIT, Copyright (c)
-2024-2026 Neomantra Corp.
+Copyright (c) 2026 [Neomantra Corp](https://www.neomantra.com).   
+
+----
+Made with :heart: and :fire: by the team behind [Nimble.Markets](https://nimble.markets).

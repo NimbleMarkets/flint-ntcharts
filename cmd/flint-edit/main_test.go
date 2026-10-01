@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/NimbleMarkets/flint-ntcharts/compile"
 )
@@ -146,8 +147,9 @@ func TestExampleSwitching(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("alt+2 did not fire a render")
 	}
-	next, _ = m.Update(cmd())
-	m = next.(model)
+	// The returned command batches the render with the editor's own repaint
+	// commands; run just the render (see renderNow) rather than the batch.
+	m = renderNow(t, m)
 	if m.state != 1 {
 		t.Fatalf("example 2 render not clean: state %d, msg %q", m.state, m.msg)
 	}
@@ -165,6 +167,29 @@ func TestExampleSwitching(t *testing.T) {
 	m = next.(model)
 	if m.src != before {
 		t.Fatal("alt+9 must not change the buffer")
+	}
+}
+
+// TestExampleSwitchRepaintsEditor is the on-screen half of example switching:
+// the buffer changing is not enough, the editor pane the user is looking at
+// must show the new example straight away, without waiting for a keystroke.
+func TestExampleSwitchRepaintsEditor(t *testing.T) {
+	m := newTestModel(t)
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = next.(model)
+	// Highlighting splits tokens with colour codes; compare the plain text.
+	if !strings.Contains(ansi.Strip(m.ed.View()), "revenue") {
+		t.Fatal("precondition: editor pane should show example 1 (field \"revenue\")")
+	}
+
+	next, _ = m.Update(tea.KeyPressMsg{Code: '3', Mod: tea.ModAlt})
+	m = next.(model)
+	pane := ansi.Strip(m.ed.View())
+	if !strings.Contains(pane, "Candlestick") {
+		t.Fatal("after alt+3 the editor pane does not show example 3 (\"Candlestick Chart\")")
+	}
+	if strings.Contains(pane, "revenue") {
+		t.Fatal("after alt+3 the editor pane still shows example 1 (field \"revenue\")")
 	}
 }
 

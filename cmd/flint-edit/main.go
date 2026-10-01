@@ -141,10 +141,15 @@ func (m *model) loadExample(i int) tea.Cmd {
 	ex := examples[i]
 	m.ed.SetContent(ex.src)
 	_ = m.ed.SetCursorPositionEnd()
+	// SetContent only swaps the buffer; the editor repaints its viewport at
+	// the end of Update. Without this pass the pane keeps showing the previous
+	// example until the next keystroke reaches the editor.
+	var edCmd tea.Cmd
+	m.ed, edCmd = m.ed.Update(nil)
 	m.src = ex.src
 	m.gen++
 	m.msg, m.state = "loaded example: "+ex.name, 0
-	return m.renderCmd()
+	return tea.Batch(edCmd, m.renderCmd())
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

@@ -16,15 +16,40 @@ API (`compile.New` / `compile.Compile`) documented in the Quickstart.
 
 ## Quickstart
 
-The compiled `flint.wasm` module and its build provenance
-(`compile/flint.wasm.buildinfo`) are committed to the repo, so no *build* step (no Javy, no
-`js/` install) is needed to run the Go test suite. A fresh clone still needs one thing before
-`go test ./...` will pass, though: both `compile/` and `speccheck/` decode into
-[`ntcharts`](https://github.com/NimbleMarkets/ntcharts)' `spec.Spec` type directly, so
-`go.mod`'s `replace github.com/NimbleMarkets/ntcharts/v2 => ../ntcharts` directive requires a
-sibling checkout of `ntcharts` (`spec` branch) at `../ntcharts` relative to this repo — see
-"Cross-validating against the real Go renderer" below for how to get one. With that sibling in
-place:
+Install the live chart window and push it a flint document:
+
+```sh
+go install github.com/NimbleMarkets/flint-ntcharts/cmd/flint-tui@latest
+
+flint-tui chart.json          # watches the file; re-renders on every save and resize
+```
+
+where `chart.json` is any flint `ChartAssemblyInput` — the same JSON you would hand
+flint-chart:
+
+```json
+{
+  "data": { "values": [
+    {"product": "Widgets", "revenue": 1250000},
+    {"product": "Gadgets", "revenue": 872500},
+    {"product": "Doodads", "revenue": 2103000}
+  ]},
+  "semantic_types": {"revenue": {"semanticType": "Price", "unit": "USD"}},
+  "chart_spec": {
+    "chartType": "Bar Chart",
+    "encodings": {"x": {"field": "product"}, "y": {"field": "revenue"}}
+  }
+}
+```
+
+`cmd/flint-edit` (`go install …/cmd/flint-edit@latest`) is a split-pane playground: edit the
+JSON on the left, watch the chart on the right.
+
+To work on the repo itself: the compiled `flint.wasm` module and its build provenance
+(`compile/flint.wasm.buildinfo`) are committed, so no *build* step (no Javy, no `js/` install)
+is needed to run the Go test suite, and [`ntcharts`](https://github.com/NimbleMarkets/ntcharts)
+(v2.5.0 or later, the first release with the `spec` package) is an ordinary module
+dependency:
 
 ```sh
 go test ./...
@@ -220,16 +245,20 @@ one at a time, when there is no error.
 
 ### Agent workflow example
 
-A typical agent loop compiles a flint document with
-[`flint-chart-mcp`](https://github.com/NimbleMarkets/flint-chart), reshapes it with
-`jq` if needed, and pushes the result at a live `flint-tui` window over its unix
-socket:
+An agent writes the same flint `ChartAssemblyInput` document it would hand to flint-chart
+and pushes it at a live `flint-tui` window over its unix socket; `flint-tui` does the
+compiling (see "Document sniffing" above — a top-level `chart_spec` key routes it through the
+embedded compiler):
 
 ```sh
 flint-tui --listen /tmp/flint.sock &
 
-flint-chart-mcp compile spec.json | jq '.' | nc -U /tmp/flint.sock
+nc -U /tmp/flint.sock < chart.json
 ```
+
+(flint-chart's own MCP server, `flint-chart-mcp`, compiles for its built-in Vega-Lite,
+ECharts and Chart.js backends; its output is not something `flint-tui` reads. Send the
+*input* document instead.)
 
 Or, for the simplest possible loop (no socket, just a watched file):
 
@@ -241,7 +270,7 @@ cat chart.json > watched.json
 
 ## Requirements
 
-- Go >= 1.26.8 (the floor set by the `ntcharts` sibling; `wazero` itself needs 1.25)
+- Go >= 1.26.8 (the floor set by `ntcharts` v2.5.0; `wazero` itself needs 1.25)
 - Node >= 20
 - `gh` CLI on your `PATH` if you need `make wasm` to fetch `bin/javy` (auto-detects
   macOS/Linux, arm64/x86_64 via `uname`; on any other platform, set `JAVY` to a pre-installed
@@ -260,29 +289,22 @@ run build`, step "Bundle builds (wasm source)" — a compile-only sanity check, 
 bundle isn't Javy-built into a new wasm module), checks that bundle's sha256 against the
 `bundle-sha256` committed in `compile/flint.wasm.buildinfo` ("Wasm provenance check" — see
 "Build provenance" above; this is what actually binds the committed `js/src/` to the
-committed `flint.wasm` without needing Javy in CI), and finally runs `go build ./...`
-(this now also compiles `cmd/flint-tui`) followed by `go test ./...`, both gated on the
-`ntcharts` sibling checkout below.
+committed `flint.wasm` without needing Javy in CI), and finally runs `go build ./...`,
+`go vet ./...` and `go test ./...`. The Go steps resolve `ntcharts` from its published
+module, so there is no sibling checkout to arrange.
 
-**Known gap — the `ntcharts` sibling checkout.** Both `go test ./compile/...` (it decodes the
-envelope's `spec` field directly into ntcharts' `spec.Spec`) and `go test ./speccheck/...` (it
-cross-validates the emitted ntcharts-spec JSON against the real ntcharts Go renderer) need the
-`ntcharts` module checked out at `../ntcharts` (wired via the `replace` directive in
-`go.mod`), which doesn't exist in CI until the `ntcharts` repo/branch this depends on has a
-pushed remote the workflow can check out alongside this one. The workflow probes for
-`../ntcharts` in a "Check ntcharts sibling" step and skips the single `go test ./...` step
-with a `::warning::` annotation when it's absent, rather than hard-failing the whole run —
-there is no longer a Go test package in this module that can run without the sibling. Revisit
-this guard once a tagged `ntcharts` release contains `spec` and the `replace` can go (the
-intended end state is a plain `require`, no sibling checkout, and no guard). The workflow has
-not yet had a real execution: this repository has not been pushed.
+To develop against an unreleased `ntcharts`, add a local override without touching `go.mod`:
+
+```sh
+go work init . ../ntcharts      # go.work is gitignored
+```
 
 ## Phase 3: TypeScript → ntcharts-spec backend
 
 Phase 3 adds a second, pure-TypeScript compile path that runs `flint-chart`'s core assembly
 pipeline (channel semantics, zero-decision, layout, overflow) and instantiates the result
 directly into [ntcharts](https://github.com/NimbleMarkets/ntcharts)'
-[`spec.Spec`](https://github.com/NimbleMarkets/ntcharts/blob/spec/spec/spec.go) JSON shape,
+[`spec.Spec`](https://github.com/NimbleMarkets/ntcharts/blob/v2/spec/spec.go) JSON shape,
 instead of a Vega-Lite spec. `assembleNtcharts` (`js/src/ntcharts/assemble.ts`) is the entry
 point: given a flint `ChartAssemblyInput`, it runs the shared flint-chart layout phases, then
 hands off to a per-chart-type template (`js/src/ntcharts/templates/`) that fills in the
@@ -396,9 +418,8 @@ passes `Validate()`, `Build()`s into a concrete terminal model, and renders a no
 go test ./speccheck/...
 ```
 
-It requires a local checkout of the `spec` branch of
-[ntcharts](https://github.com/NimbleMarkets/ntcharts) at `../ntcharts` relative to this repo
-(wired via a `replace` directive in `go.mod`).
+The renderer is the published [ntcharts](https://github.com/NimbleMarkets/ntcharts) module
+at the version `go.mod` requires, so this check runs anywhere `go test` does, CI included.
 
 ### Regenerating the ntcharts-spec goldens
 

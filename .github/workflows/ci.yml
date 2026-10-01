@@ -39,27 +39,10 @@ jobs:
       - name: Wasm provenance check (bundle matches committed flint.wasm)
         run: |
           test "$(shasum -a 256 js/dist/flint-javy.js | cut -d' ' -f1)" = "$(grep '^bundle-sha256:' compile/flint.wasm.buildinfo | awk '{print $2}')"
-      # go.mod has `replace github.com/NimbleMarkets/ntcharts/v2 => ../ntcharts`,
-      # required both by speccheck/ (it cross-validates the emitted
-      # ntcharts-spec JSON against the real ntcharts Go renderer) and by
-      # compile/ (compile.go decodes the envelope's spec field directly into
-      # ntcharts' spec.Spec). That sibling checkout does not exist in CI until
-      # the ntcharts repo/branch is pushed somewhere this workflow can clone
-      # it alongside this repo, so probe for it instead of hard-failing:
-      # every Go test in this module needs the sibling now, so `go test ./...`
-      # runs as a single guarded step, skipped with a warning annotation when
-      # the sibling is absent rather than run partially. Revisit once
-      # ../ntcharts is available in CI (vendor it in, or check out the
-      # sibling repo explicitly).
-      - name: Check ntcharts sibling
-        id: ntcharts-sibling
-        run: |
-          if [ -d ../ntcharts ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::../ntcharts sibling checkout not found (go.mod replace target) -- skipping go test ./... (both compile/ and speccheck/ now import ntcharts spec, so neither can run without it)."
-          fi
-      - name: Go tests (requires ../ntcharts sibling)
-        if: steps.ntcharts-sibling.outputs.present == 'true'
-        run: go build ./... && go test ./...
+      # compile/ decodes the envelope's spec field into ntcharts' spec.Spec and
+      # speccheck/ renders every golden through the real ntcharts renderer;
+      # both resolve ntcharts from the published module (go.mod requires
+      # github.com/NimbleMarkets/ntcharts/v2 >= v2.5.0, the first release
+      # that ships the spec package), so no sibling checkout is involved.
+      - name: Go build, vet, tests
+        run: go build ./... && go vet ./... && go test ./...

@@ -10,12 +10,15 @@ All commands below were run on 2026-07-17 and the "expect" output is real, not i
 | repo | path | branch |
 |---|---|---|
 | flint-ntcharts (hub) | `~/projects/flint-ntcharts` | `main` |
-| ntcharts (spec) | `~/projects/ntcharts` | `spec` |
+| ntcharts (renderer; optional checkout) | `~/projects/ntcharts` | `v2` |
 | booba-shim | `~/projects/booba-shim` | `flintchart` |
 
-> **Protected files — leave them alone.** `ntcharts` has pre-existing uncommitted changes to
-> `go.mod` / `go.sum` / `go.work.sum`, and `booba-shim` has an uncommitted `ci.yml` edit. `git status`
-> showing those after a test run is expected — the tests don't touch them.
+> Since ntcharts v2.5.0 the hub depends on the published `ntcharts` module, so a sibling
+> checkout is only needed to run the renderer's own suite (step 5) or to develop against an
+> unreleased ntcharts (`go work init . ../ntcharts`).
+>
+> **Protected file — leave it alone.** `booba-shim` has an uncommitted `ci.yml` edit; `git status`
+> showing it after a test run is expected — the tests don't touch it.
 
 ---
 

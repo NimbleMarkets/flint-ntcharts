@@ -23,7 +23,7 @@ tasks:
     deps: [test-go, test-js]
 
   test-go:
-    desc: 'Go tests: compile parity, speccheck, envelope, tui, cmd (needs ../ntcharts)'
+    desc: 'Go tests: compile parity, speccheck, envelope, tui, cmd'
     cmds:
       - go test ./... -count=1
 
@@ -65,7 +65,7 @@ tasks:
         if [ "$got" = "$want" ]; then echo "ok  flint.wasm matches buildinfo ($got)"; else echo "MISMATCH  got=$got  want=$want"; exit 1; fi
 
   verify:
-    desc: 'Tri-repo sweep — this repo plus the ntcharts & booba-shim siblings'
+    desc: 'Tri-repo sweep — this repo plus optional ../ntcharts and ../booba-shim checkouts'
     cmds:
       - go test ./... -count=1
       - cd {{.NTCHARTS}} && go test ./spec/ -count=1

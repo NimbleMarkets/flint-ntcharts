@@ -39,6 +39,7 @@ var examples = []example{
   "semantic_types": { "price": {"semanticType": "Price", "unit": "USD"} },
   "chart_spec": {
     "chartType": "Line Chart",
+    "chartProperties": { "includeZero_y": false },
     "encodings": { "x": {"field": "date"}, "y": {"field": "price"} }
   }
 }`},

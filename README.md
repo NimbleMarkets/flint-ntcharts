@@ -446,16 +446,23 @@ left in place rather than stripped.
 
 ### Known gaps
 
-- **`chart_spec.chartProperties` passes through unvalidated.** Unlike upstream flint-chart,
-  this backend does not shim `normalizeChartProperties`: property-driven overrides that
-  upstream derives from normalized chartProperties (e.g. `includeZero_x`, `logScale_x`) are
-  **not applied** here. See the "Deviations" note at the top of `js/src/ntcharts/shims.ts` for
-  the full list of intentionally-unshimmed/unimplemented upstream utilities
-  (`normalizeChartProperties`, `computeMinSubplotDimensions`, `decideColorMaps`).
-- **Discrete-axis overflow keeps at least 60 values, whatever the width.** flint's
-  `filterOverflow` floor means a bar chart with 40 categories at `baseSize.width: 20` is
-  emitted with all 40 labels; how they fit is left to the ntcharts renderer. Only past the
-  floor does truncation (and the single `overflow` warning) kick in.
+- **`chart_spec.chartProperties` are not normalized.** Unlike upstream flint-chart, this
+  backend does not run `normalizeChartProperties` (it is not exported; see the "Deviations"
+  note at the top of `js/src/ntcharts/shims.ts`), so properties are read as given. The ones
+  it acts on:
+  - `includeZero_y` (`true`/`false`) on line, time-series and scatter charts overrides
+    flint's zero-baseline decision; `false` fits the Y axis to the data with 5% padding.
+  - `includeZero_y` on a bar chart, and `includeZero_x` anywhere, cannot be honoured (the
+    terminal bar model always draws from zero; the X range always follows the data) and
+    produce an `info` warning, `chart-property-unsupported`.
+  - `logScale_x` / `logScale_y`: terminal charts have no logarithmic axis yet, so the chart
+    is drawn linear with a `log-scale-unsupported` warning.
+  - `candleStyle` (`line` / `block`) on candlestick charts.
+- **Bar charts are truncated to what the terminal can draw.** The ntcharts bar model needs
+  two cells per bar (the bar and its gap), so a chart `W` cells wide shows at most `W/2`
+  categories (`H/2` for horizontal bars). Past that, flint's overflow handling keeps the
+  first categories in sort order and the envelope carries one `overflow` warning naming how
+  many were omitted.
 
 ## License
 

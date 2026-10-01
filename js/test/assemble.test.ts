@@ -248,3 +248,81 @@ describe("assemble: logScale chart property", () => {
     expect(out.x_axis?.scale).toBeUndefined();
   });
 });
+
+// flint shrinks the plot of a chart whose X axis is continuous (a pixel-world
+// aspect-ratio and mark-density calculation), emitting about 45% of the
+// requested width. A terminal chart fills the cells it was given.
+describe("assemble: charts fill the requested size", () => {
+  const pts = Array.from({ length: 30 }, (_, i) => ({ x: i, y: Math.round(30 + 20 * Math.sin(i / 4)) }));
+  const cats = ["a", "b", "c"].flatMap((a) => ["p", "q"].map((b) => ({ a, b, v: a.length + b.length })));
+  const numericCols = ["09", "12", "15"].flatMap((h) => ["Mon", "Tue"].map((d) => ({ h, d, v: 1 })));
+
+  const cases: [string, any, any][] = [
+    ["line chart", "Line Chart", { x: { field: "x" }, y: { field: "y" } }],
+    ["scatter plot", "Scatter Plot", { x: { field: "x" }, y: { field: "y" } }],
+    ["sparkline", "Sparkline", { x: { field: "x" }, y: { field: "y" } }],
+  ];
+
+  for (const [name, chartType, encodings] of cases) {
+    for (const [width, height] of [[80, 20], [120, 40], [30, 10]]) {
+      it(`${name} at ${width}x${height} emits exactly that`, () => {
+        const out = assembleNtcharts({
+          data: { values: pts },
+          chart_spec: { chartType, encodings, baseSize: { width, height } },
+        } as any);
+        expect([out.width, out.height]).toEqual([width, height]);
+        expect([out._width, out._height]).toEqual([width, height]);
+      });
+    }
+  }
+
+  it("a heatmap whose column names look like numbers fills the width too", () => {
+    const out = assembleNtcharts({
+      data: { values: numericCols },
+      chart_spec: {
+        chartType: "Heatmap",
+        encodings: { x: { field: "h" }, y: { field: "d" }, color: { field: "v" } },
+        baseSize: { width: 60, height: 16 },
+      },
+    } as any);
+    expect([out.width, out.height]).toEqual([60, 16]);
+  });
+
+  it("categorical charts are unchanged", () => {
+    const heat = assembleNtcharts({
+      data: { values: cats },
+      chart_spec: {
+        chartType: "Heatmap",
+        encodings: { x: { field: "a" }, y: { field: "b" }, color: { field: "v" } },
+        baseSize: { width: 80, height: 20 },
+      },
+    } as any);
+    expect([heat.width, heat.height]).toEqual([80, 20]);
+    const bar = assembleNtcharts({
+      data: { values: [{ k: "a", v: 1 }, { k: "b", v: 2 }] },
+      chart_spec: { chartType: "Bar Chart", encodings: { x: { field: "k" }, y: { field: "v" } }, baseSize: { width: 80, height: 20 } },
+    } as any);
+    expect([bar.width, bar.height]).toEqual([80, 20]);
+  });
+
+  it("never exceeds the request unless a canvasSize allows growth", () => {
+    const out = assembleNtcharts({
+      data: { values: pts },
+      chart_spec: {
+        chartType: "Line Chart",
+        encodings: { x: { field: "x" }, y: { field: "y" } },
+        baseSize: { width: 80, height: 20 },
+        canvasSize: { width: 60, height: 20 },
+      },
+    } as any);
+    expect(out.width).toBeLessThanOrEqual(60);
+  });
+
+  it("the 8x4 minimum still applies to a tiny request", () => {
+    const out = assembleNtcharts({
+      data: { values: pts },
+      chart_spec: { chartType: "Line Chart", encodings: { x: { field: "x" }, y: { field: "y" } }, baseSize: { width: 5, height: 2 } },
+    } as any);
+    expect([out.width, out.height]).toEqual([8, 4]);
+  });
+});

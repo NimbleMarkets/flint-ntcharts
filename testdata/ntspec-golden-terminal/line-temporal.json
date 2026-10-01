@@ -1,6 +1,6 @@
 {
   "type": "timeseries",
-  "width": 33,
+  "width": 64,
   "height": 20,
   "data": {
     "series": [
@@ -48,6 +48,6 @@
     "min": 100.50500000000001,
     "max": 120.195
   },
-  "_width": 33,
+  "_width": 64,
   "_height": 20
 }

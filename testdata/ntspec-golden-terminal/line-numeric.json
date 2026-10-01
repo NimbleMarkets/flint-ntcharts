@@ -1,6 +1,6 @@
 {
   "type": "line",
-  "width": 34,
+  "width": 64,
   "height": 20,
   "data": {
     "series": [
@@ -40,6 +40,6 @@
     "min": 0.40399999999999997,
     "max": 0.756
   },
-  "_width": 34,
+  "_width": 64,
   "_height": 20
 }

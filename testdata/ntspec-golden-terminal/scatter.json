@@ -1,6 +1,6 @@
 {
   "type": "scatter",
-  "width": 33,
+  "width": 64,
   "height": 20,
   "data": {
     "series": [
@@ -60,6 +60,6 @@
   "options": {
     "show_legend": true
   },
-  "_width": 33,
+  "_width": 64,
   "_height": 20
 }

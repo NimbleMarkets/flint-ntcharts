@@ -1,6 +1,6 @@
 {
   "type": "sparkline",
-  "width": 32,
+  "width": 64,
   "height": 20,
   "data": {
     "series": [
@@ -35,6 +35,6 @@
       }
     ]
   },
-  "_width": 32,
+  "_width": 64,
   "_height": 20
 }

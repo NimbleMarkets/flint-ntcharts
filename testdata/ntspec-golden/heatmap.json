@@ -1,6 +1,6 @@
 {
   "type": "heatmap",
-  "width": 16,
+  "width": 400,
   "height": 300,
   "data": {
     "series": []
@@ -81,6 +81,6 @@
       "#fde725"
     ]
   },
-  "_width": 16,
+  "_width": 400,
   "_height": 300
 }

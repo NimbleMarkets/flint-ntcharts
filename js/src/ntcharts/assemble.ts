@@ -118,10 +118,20 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
   const ntFormatY = axisFormat(channelSemantics.y, warn);
 
   // PHASE 2: instantiate into an NtSpec.
+  //
+  // The plot fills the cells it was asked for. For a chart whose X axis is
+  // continuous (line, scatter, sparkline, a heatmap with numeric-looking
+  // columns) flint's layout shrinks the plot — it runs a mark-density and
+  // aspect-ratio-banking calculation designed for pixel canvases, and returns
+  // about 45% of the requested width. A terminal window is the budget, so an
+  // unused column is wasted; take the larger of flint's size and the request.
+  // Banded charts already fill the request, and where a canvasSize ceiling
+  // allows growth flint's larger size still wins. Without a ceiling the
+  // stretch cap of 1 keeps flint's size at or below the request.
   const emit: NtSpec = {
     type: "bar", // template overwrites
-    width: Math.max(8, Math.round(layout.subplotWidth)),
-    height: Math.max(4, Math.round(layout.subplotHeight)),
+    width: Math.max(8, Math.round(layout.subplotWidth), baseSize.width),
+    height: Math.max(4, Math.round(layout.subplotHeight), baseSize.height),
     data: { series: [] },
   };
   if (input.chart_spec.title) emit.title = input.chart_spec.title;

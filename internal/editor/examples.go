@@ -1,4 +1,4 @@
-package main
+package editor
 
 // example is a built-in demo spec, loadable with ctrl+N / alt+N where N is
 // its 1-based position in examples.

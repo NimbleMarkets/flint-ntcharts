@@ -50,7 +50,8 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
   const chartType = input.chart_spec.chartType;
   let template: ChartTemplateDef | undefined = ntGetTemplateDef(chartType);
   if (!template) {
-    throw new Error(`Unknown chart type "${chartType}". Supported: ${ntSupportedChartTypes().join(", ")}`);
+    throw new Error(`Unknown chart type "${chartType}". Supported: ${ntSupportedChartTypes().join(", ")}. ` +
+      `To draw other chart types as an image, add "renderer": "raster" to the input.`);
   }
   const semanticTypes = input.semantic_types ?? {};
   const rawData: Record<string, unknown>[] = (input.data as any).values ?? [];

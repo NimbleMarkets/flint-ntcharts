@@ -30,9 +30,10 @@ type Size struct {
 
 // wireEnvelope is the on-the-wire shape of a compiler envelope.
 type wireEnvelope struct {
-	Spec     spec.Spec `json:"spec"`
-	Warnings []Warning `json:"warnings"`
-	Size     Size      `json:"size"`
+	Spec     *spec.Spec      `json:"spec"`
+	ECharts  json.RawMessage `json:"echarts"` // set instead of Spec by the raster renderer
+	Warnings []Warning       `json:"warnings"`
+	Size     Size            `json:"size"`
 	// Error is set instead of Spec/Warnings/Size when the wasm/Node compiler
 	// hits a compile-time failure (e.g. an unsupported chart type): it still
 	// writes valid JSON to stdout and exits 0, so this is discriminated by
@@ -62,8 +63,55 @@ func Parse(raw []byte) (spec.Spec, []Warning, error) {
 	if env.Error != nil {
 		return spec.Spec{}, nil, fmt.Errorf("flint compile: %s", env.Error.Message)
 	}
+	if env.hasECharts() {
+		return spec.Spec{}, nil, fmt.Errorf("compile: this is a raster envelope (an ECharts option, not a spec); use ParseResult")
+	}
 	if env.Warnings == nil {
 		env.Warnings = []Warning{}
 	}
-	return env.Spec, env.Warnings, nil
+	if env.Spec == nil {
+		return spec.Spec{}, env.Warnings, nil
+	}
+	return *env.Spec, env.Warnings, nil
+}
+
+func (e *wireEnvelope) hasECharts() bool {
+	return len(e.ECharts) > 0 && string(e.ECharts) != "null"
+}
+
+// Result is a decoded compiler envelope of either kind. Exactly one of Spec
+// and ECharts is set: Spec for the text renderer (draw it with spec.Build),
+// ECharts for the raster renderer (flint's ECharts option, drawn as an image
+// by the raster package).
+type Result struct {
+	Spec     *spec.Spec
+	ECharts  json.RawMessage
+	Warnings []Warning // never nil
+	Size     Size
+}
+
+// ParseResult decodes a compiler envelope of either kind. A
+// {"error":{"message"}} envelope returns a non-nil error carrying the message
+// verbatim, as Parse does.
+func ParseResult(raw []byte) (Result, error) {
+	var env wireEnvelope
+	if err := json.Unmarshal(raw, &env); err != nil {
+		return Result{}, fmt.Errorf("compile: bad envelope: %w (raw: %.200s)", err, raw)
+	}
+	if env.Error != nil {
+		return Result{}, fmt.Errorf("flint compile: %s", env.Error.Message)
+	}
+	if env.Warnings == nil {
+		env.Warnings = []Warning{}
+	}
+	res := Result{Warnings: env.Warnings, Size: env.Size}
+	switch {
+	case env.hasECharts():
+		res.ECharts = env.ECharts
+	case env.Spec != nil:
+		res.Spec = env.Spec
+	default:
+		return Result{}, fmt.Errorf("compile: envelope has neither a spec nor an echarts option (raw: %.200s)", raw)
+	}
+	return res, nil
 }

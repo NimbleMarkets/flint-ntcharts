@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Unreleased
+
+ * Opt-in raster renderer: `"renderer": "raster"` on the input (or `envelope.WithRenderer`) compiles to flint's ECharts option, and the new `raster` package draws it as an image with go-analyze. This adds chart types the text renderer cannot draw, such as grouped bars, pies and radars. `Render` returns `raster.ErrBlank` when the chart drew no data. New API: `envelope.ParseResult`, `envelope.Result`, `compile.Runner.CompileResult`. The embedded compiler grows from 1.9 MB to 3.4 MB.
+ * An unknown chart type now suggests the raster renderer in its error.
+
 ## v0.2.1 (2026-10-01)
 
  * `flint-edit` now runs in the browser: <https://nimblemarkets.github.io/flint-ntcharts/>. It is built from `demo/` and deployed to GitHub Pages on every push to `main`. `task site` builds it; `task site-serve` serves it locally.

@@ -135,6 +135,28 @@ There are two failure layers, both specified:
    `CompileRaw` (and therefore `Compile`) with the module's stderr attached to the error
    message.
 
+### Raster renderer (opt-in)
+
+The text renderer draws seven kinds of chart and approximates a few more. For anything else,
+add `"renderer": "raster"` to the input document (or pass `envelope.WithRenderer("raster")`).
+The compiler then returns flint's ECharts option instead of an ntcharts spec, and the
+[`raster`](raster/) package draws it as an image with
+[go-analyze/charts](https://github.com/go-analyze/charts), which a Kitty-capable terminal can
+show with `picture.Model`:
+
+```go
+res, err := runner.CompileResult(ctx, input, envelope.WithRenderer("raster"))
+// res.ECharts is the option; res.Spec is nil
+img, err := raster.Render(res.ECharts, 800, 500)
+if errors.Is(err, raster.ErrBlank) { /* go-analyze drew nothing: use the text renderer */ }
+```
+
+go-analyze draws only part of what flint emits. Measured over flint's own test corpus, about 80%
+of cases draw something, 15% come back blank (Heatmap, Boxplot and Waterfall always do) and 5%
+fail. `Render` reports a blank chart as `ErrBlank` rather than returning an empty image. It cannot
+tell a chart that is drawn *wrong* (stacked bars drawn side by side, Gantt bars drawn as lines),
+so raster is opt-in and nothing selects it automatically.
+
 ### Build provenance
 
 `compile/flint.wasm.buildinfo`, written by `make wasm`, records the Javy version, the

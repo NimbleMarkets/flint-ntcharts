@@ -19,6 +19,19 @@ func WithCanvasSize(w, h int) Option {
 	return setChartSpecSize("canvasSize", w, h)
 }
 
+// WithRenderer picks the output: "text" (the default, an ntcharts spec) or
+// "raster" (flint's ECharts option, for the raster package to draw as an
+// image). It sets the input's top-level renderer key.
+func WithRenderer(name string) Option {
+	return func(doc map[string]any) error {
+		if name != "text" && name != "raster" {
+			return fmt.Errorf("compile: unknown renderer %q: use \"text\" or \"raster\"", name)
+		}
+		doc["renderer"] = name
+		return nil
+	}
+}
+
 func setChartSpecSize(key string, w, h int) Option {
 	return func(doc map[string]any) error {
 		cs, ok := doc["chart_spec"].(map[string]any)

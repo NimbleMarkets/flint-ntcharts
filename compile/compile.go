@@ -120,3 +120,15 @@ func (r *Runner) Compile(ctx context.Context, input []byte, opts ...Option) (spe
 	}
 	return envelope.Parse(raw)
 }
+
+// CompileResult is Compile for either renderer: it returns the decoded
+// envelope, which holds a spec (text) or an ECharts option (raster, selected
+// with envelope.WithRenderer or the input's renderer key). Callers that only
+// handle text should use Compile, which rejects raster envelopes.
+func (r *Runner) CompileResult(ctx context.Context, input []byte, opts ...Option) (envelope.Result, error) {
+	raw, err := r.CompileRaw(ctx, input, opts...)
+	if err != nil {
+		return envelope.Result{}, err
+	}
+	return envelope.ParseResult(raw)
+}

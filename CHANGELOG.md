@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Unreleased
+
+ * `flint-edit` runs in the browser: `demo/` builds it for go-booba, compiling through the booba-shim bridge (`task site`, `task site-serve`).
+
 ## v0.2.0 (2026-10-01)
 
  * Requires ntcharts v2.6.0.

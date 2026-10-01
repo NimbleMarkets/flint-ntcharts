@@ -7,3 +7,4 @@ bin/
 go.work
 go.work.sum
 .task/
+demo/dist/

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>flint-ntcharts — flint-edit in the browser</title>
+<style>
+  :root { color-scheme: dark; --bg: #1e1e1e; --fg: #d8d8d8; --dim: #8a8a8a; --accent: #5ad4e6; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; display: flex; flex-direction: column; }
+  header { padding: 14px 20px 10px; }
+  h1 { font-size: 20px; font-weight: 600; }
+  h1 a { color: inherit; text-decoration: none; }
+  p { color: var(--dim); max-width: 78ch; }
+  p a, code { color: var(--accent); }
+  code { font: 13px ui-monospace, Menlo, monospace; }
+  main { flex: 1; min-height: 0; padding: 0 12px 12px; }
+  #terminal-container { height: 100%; border: 1px solid #333; border-radius: 6px; padding: 4px; overflow: hidden; }
+  #status { color: var(--dim); padding: 0 20px 8px; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1><a href="https://github.com/NimbleMarkets/flint-ntcharts">flint-ntcharts</a> · flint-edit</h1>
+  <p>
+    Edit a <a href="https://github.com/microsoft/flint-chart">flint</a> chart spec on the left and the terminal chart
+    redraws on the right, rendered by <a href="https://github.com/NimbleMarkets/ntcharts">ntcharts</a>.
+    Everything runs in your browser. Click the terminal, then press <code>ctrl+n</code> to step through the examples.
+    Run it locally with <code>go install github.com/NimbleMarkets/flint-ntcharts/cmd/flint-edit@latest</code>.
+  </p>
+</header>
+<div id="status">loading…</div>
+<main><div id="terminal-container"></div></main>
+
+<script src="wasm_exec.js"></script>
+<script type="module">
+  import './booba-shim/flintchart/flintchart-shim.js';
+  import { BoobaTerminal } from './booba/booba.js';
+
+  const status = document.getElementById('status');
+  try {
+    const go = new Go();
+    const wasm = await WebAssembly.instantiateStreaming(fetch('app.wasm'), go.importObject);
+    go.run(wasm.instance);
+    const booba = new BoobaTerminal('terminal-container');
+    await booba.init();
+    booba.connectWasm();
+    booba.focus();
+    status.remove();
+  } catch (err) {
+    status.textContent = 'failed to start: ' + err;
+    console.error(err);
+  }
+</script>
+</body>
+</html>

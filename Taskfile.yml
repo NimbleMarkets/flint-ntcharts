@@ -126,6 +126,26 @@ tasks:
     cmds:
       - go run ./cmd/flint-edit
 
+  site:
+    desc: 'Build the browser demo (flint-edit in go-booba) into demo/dist/'
+    dir: demo
+    cmds:
+      - go run ./cmd/site
+
+  site-serve:
+    desc: 'Serve the browser demo at http://localhost:8000/'
+    deps: [site]
+    cmds:
+      - echo 'Serving at http://localhost:8000/'
+      - python3 -m http.server 8000 --bind 127.0.0.1 -d demo/dist
+
+  site-smoke:
+    desc: 'Drive the built browser demo headlessly in Node (builds it first)'
+    deps: [site]
+    dir: demo
+    cmds:
+      - node smoke.mjs
+
   gif:
     desc: 'Record cmd/flint-edit/demo.gif from its VHS tape (needs vhs, ttyd, ffmpeg)'
     deps: [build]

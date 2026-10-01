@@ -61,7 +61,7 @@ func TestSniff(t *testing.T) {
 
 func TestRenderDocFlint(t *testing.T) {
 	r := newTestRunner(t)
-	msg := renderDoc(r, []byte(flintDoc), 60, 20)
+	msg := renderDoc(r, []byte(flintDoc), 60, 20, 0, 0)
 	if msg.err != nil {
 		t.Fatalf("renderDoc(flint): %v", msg.err)
 	}
@@ -72,7 +72,7 @@ func TestRenderDocFlint(t *testing.T) {
 
 func TestRenderDocDirectSpecFitsWindow(t *testing.T) {
 	r := newTestRunner(t)
-	msg := renderDoc(r, []byte(specDoc), 44, 15)
+	msg := renderDoc(r, []byte(specDoc), 44, 15, 0, 0)
 	if msg.err != nil {
 		t.Fatalf("renderDoc(spec): %v", msg.err)
 	}
@@ -93,7 +93,7 @@ func TestRenderDocEnvelopeWarningsSurfaced(t *testing.T) {
 	  ],
 	  "size": {"width":10,"height":5}
 	}`
-	msg := renderDoc(r, []byte(doc), 40, 12)
+	msg := renderDoc(r, []byte(doc), 40, 12, 0, 0)
 	if msg.err != nil {
 		t.Fatalf("renderDoc(envelope): %v", msg.err)
 	}
@@ -105,7 +105,7 @@ func TestRenderDocEnvelopeWarningsSurfaced(t *testing.T) {
 func TestRenderDocErrorEnvelopeSurfacesCompilerMessage(t *testing.T) {
 	r := newTestRunner(t)
 	doc := `{"error":{"message":"Unknown chart type \"X\""}}`
-	msg := renderDoc(r, []byte(doc), 40, 12)
+	msg := renderDoc(r, []byte(doc), 40, 12, 0, 0)
 	if msg.err == nil {
 		t.Fatal("expected error-envelope doc to produce a render error")
 	}
@@ -116,7 +116,7 @@ func TestRenderDocErrorEnvelopeSurfacesCompilerMessage(t *testing.T) {
 
 func TestRenderDocBadDocKeepsError(t *testing.T) {
 	r := newTestRunner(t)
-	msg := renderDoc(r, []byte(`{"chart_spec": {"chartType": "Rose Chart", "encodings": {}}, "data": {"values": []}}`), 40, 12)
+	msg := renderDoc(r, []byte(`{"chart_spec": {"chartType": "Rose Chart", "encodings": {}}, "data": {"values": []}}`), 40, 12, 0, 0)
 	if msg.err == nil {
 		t.Fatal("expected compile error to surface")
 	}

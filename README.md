@@ -53,8 +53,9 @@ flint-chart:
 
 `cmd/flint-edit` (`go install …/cmd/flint-edit@latest`; also [in the browser](https://nimblemarkets.github.io/flint-ntcharts/); source in [`demo/`](demo/), `task site-serve` builds it locally) is a split-pane playground: edit the
 JSON on the left, watch the chart on the right. `ctrl+n` steps through the built-in examples
-(bar, time series, candlestick, log scale, heatmap, histogram, calendar heatmap); `ctrl+1`‥`7` / `alt+1`‥`7` jump to one directly in terminals
-that deliver those chords.
+(bar, time series, candlestick, log scale, heatmap, histogram, calendar heatmap, grouped bars as a raster chart);
+`ctrl+1`‥`8` / `alt+1`‥`8` jump to one directly in terminals that deliver those chords. `ctrl+g` switches a raster chart
+between Kitty graphics and glyphs.
 
 To work on the repo itself: the compiled `flint.wasm` module and its build provenance
 (`compile/flint.wasm.buildinfo`) are committed, so no *build* step (no Javy, no `js/` install)
@@ -150,6 +151,10 @@ res, err := runner.CompileResult(ctx, input, envelope.WithRenderer("raster"))
 img, err := raster.Render(res.ECharts, 800, 500)
 if errors.Is(err, raster.ErrBlank) { /* go-analyze drew nothing: use the text renderer */ }
 ```
+
+In `flint-tui` and `flint-edit` (and any host using `tui.RenderFrame` and `tui.Pane`) the chart is shown with
+Kitty graphics when the terminal answers the probe, and with half-block glyphs otherwise. When raster cannot
+draw a chart, the viewer falls back to the text chart and says why in a `raster-fallback` warning.
 
 go-analyze draws only part of what flint emits. Measured over flint's own test corpus, about 80%
 of cases draw something, 15% come back blank (Heatmap, Boxplot and Waterfall always do) and 5%
@@ -266,6 +271,7 @@ needing a fresh document push.
 ### Keys
 
 - `q` or `ctrl+c` — quit
+- `g` — switch a raster chart between Kitty graphics and glyphs
 
 ### Status line and error handling
 

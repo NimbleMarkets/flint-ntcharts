@@ -38,7 +38,7 @@ func TestProgramHeadlessSmoke(t *testing.T) {
 	if !ok {
 		t.Fatalf("final model %T", final)
 	}
-	if strings.TrimSpace(fm.chartView) == "" {
+	if strings.TrimSpace(fm.pane.View()) == "" {
 		t.Fatal("program never rendered the pushed document")
 	}
 }

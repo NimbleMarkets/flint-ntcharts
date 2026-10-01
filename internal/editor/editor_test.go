@@ -40,17 +40,17 @@ func TestEditorRendersOnResize(t *testing.T) {
 	next, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 24})
 	m = renderNow(t, next.(model))
 
-	if strings.TrimSpace(m.chart) == "" {
+	if strings.TrimSpace(m.pane.View()) == "" {
 		t.Fatal("no chart after the initial render")
 	}
 	if m.state != 1 {
 		t.Fatalf("expected ok state after a valid spec, got %d (%q)", m.state, m.msg)
 	}
-	wide := m.chart
+	wide := m.pane.View()
 
 	next, _ = m.Update(tea.WindowSizeMsg{Width: 60, Height: 16})
 	m = renderNow(t, next.(model))
-	if m.chart == wide {
+	if m.pane.View() == wide {
 		t.Fatal("resize did not re-render the chart at the new size")
 	}
 }
@@ -100,10 +100,10 @@ func TestExamplesCompile(t *testing.T) {
 	next, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 24})
 	m = next.(model)
 
-	if len(examples) != 7 {
-		t.Fatalf("expected 7 examples, got %d", len(examples))
+	if len(examples) != 8 {
+		t.Fatalf("expected 8 examples, got %d", len(examples))
 	}
-	for i, want := range []string{"Bar Chart", "Timeseries Line", "Candlestick", "Log Scale", "Heatmap", "Histogram", "Calendar Heatmap"} {
+	for i, want := range []string{"Bar Chart", "Timeseries Line", "Candlestick", "Log Scale", "Heatmap", "Histogram", "Calendar Heatmap", "Grouped Bars (raster)"} {
 		if examples[i].name != want {
 			t.Fatalf("examples[%d].name = %q, want %q", i, examples[i].name, want)
 		}
@@ -119,7 +119,7 @@ func TestExamplesCompile(t *testing.T) {
 			t.Fatalf("example %d (%s): state %d, msg %q — want clean compile",
 				i+1, ex.name, m.state, m.msg)
 		}
-		if strings.TrimSpace(m.chart) == "" {
+		if strings.TrimSpace(m.pane.View()) == "" {
 			t.Fatalf("example %d (%s): empty chart", i+1, ex.name)
 		}
 	}
@@ -202,7 +202,7 @@ func TestNextExampleCycles(t *testing.T) {
 	m = next.(model)
 
 	ctrlN := tea.KeyPressMsg{Code: 'n', Mod: tea.ModCtrl}
-	for step, want := range []int{1, 2, 3, 4, 5, 6, 0, 1} {
+	for step, want := range []int{1, 2, 3, 4, 5, 6, 7, 0, 1} {
 		next, cmd := m.Update(ctrlN)
 		m = next.(model)
 		if m.src != examples[want].src {

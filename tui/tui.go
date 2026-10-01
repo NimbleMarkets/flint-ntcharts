@@ -44,10 +44,10 @@ type Model struct {
 	raw           []byte // last received document (re-rendered on resize)
 	source        string
 
-	chartView string
-	warnings  []envelope.Warning
-	err       error
-	waiting   bool // no document received yet
+	pane     Pane
+	warnings []envelope.Warning
+	err      error
+	waiting  bool // no document received yet
 
 	// gen is bumped on every InputMsg/WindowSizeMsg so in-flight renderedMsg
 	// results from a superseded request can be told apart from the latest
@@ -58,17 +58,17 @@ type Model struct {
 // New builds a Model backed by c: a native *compile.Runner (embedded wasm) or
 // any other Compiler implementation (e.g. a browser/js host adapter).
 func New(c Compiler) Model {
-	return Model{compiler: c, waiting: true}
+	return Model{compiler: c, waiting: true, pane: NewPane()}
 }
 
-func (m Model) Init() tea.Cmd { return nil }
+func (m Model) Init() tea.Cmd { return m.pane.Init() }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		m.gen++
-		return m, m.rerenderCmd()
+		return m, tea.Batch(m.pane.SetSize(m.width, max(m.height-1, 0)), m.rerenderCmd())
 	case InputMsg:
 		m.raw, m.source = msg.Raw, msg.Source
 		m.waiting = false
@@ -80,7 +80,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.warnings, m.err = msg.warnings, msg.err
 		if msg.err == nil {
-			m.chartView = msg.view // errors keep the last good chart
+			// errors keep the last good chart
+			return m, m.pane.Apply(Frame{Text: msg.view, Image: msg.img})
 		}
 		return m, nil
 	case SourceErrMsg:
@@ -90,9 +91,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "g":
+			return m, m.pane.Toggle() // Kitty graphics <-> glyphs, for raster charts
 		}
 	}
-	return m, nil
+	// Anything else is the pane's: terminal probe replies, Kitty frames.
+	return m, m.pane.Update(msg)
 }
 
 // rerenderCmd re-renders the retained document asynchronously (compiles run
@@ -103,8 +107,9 @@ func (m Model) rerenderCmd() tea.Cmd {
 	}
 	compiler, raw, gen := m.compiler, m.raw, m.gen
 	w, h := m.width, m.height-1 // reserve the status line
+	cellW, cellH := m.pane.CellPixelSize()
 	return func() tea.Msg {
-		msg := renderDoc(compiler, raw, w, h)
+		msg := renderDoc(compiler, raw, w, h, cellW, cellH)
 		msg.gen = gen
 		return msg
 	}
@@ -116,7 +121,7 @@ func (m Model) View() tea.View {
 	case m.waiting:
 		body = statusStyle.Render("waiting for a chart document…")
 	default:
-		body = m.chartView
+		body = m.pane.View()
 	}
 	// pad/truncate body to exactly height-1 lines so the status line stays put
 	lines := strings.Split(strings.TrimRight(body, "\n"), "\n")

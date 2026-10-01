@@ -13,7 +13,6 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/ionut-t/goeditor"
 
-	"github.com/NimbleMarkets/flint-ntcharts/envelope"
 	"github.com/NimbleMarkets/flint-ntcharts/tui"
 )
 
@@ -35,8 +34,7 @@ var (
 // generation that requested it so stale results can be dropped.
 type renderedMsg struct {
 	gen   int
-	view  string
-	warns []envelope.Warning
+	frame tui.Frame
 	err   error
 }
 
@@ -45,10 +43,10 @@ type model struct {
 	ed     goeditor.Model
 
 	w, h  int
-	src   string // last content sent to a render
-	chart string // last good chart
-	msg   string // status line text
-	state int    // 0 pending, 1 ok, 2 warn, 3 error
+	src   string   // last content sent to a render
+	pane  tui.Pane // last good chart: text, or a raster image
+	msg   string   // status line text
+	state int      // 0 pending, 1 ok, 2 warn, 3 error
 	gen   int
 	ex    int // index of the example last loaded; ctrl+n continues from it
 }
@@ -66,13 +64,15 @@ func newModel(c tui.Compiler) model {
 	ed.SetContent(examples[0].src)
 	_ = ed.SetCursorPositionEnd()
 	ed.Focus()
-	return model{runner: c, ed: ed, src: examples[0].src, msg: "type to render"}
+	return model{runner: c, ed: ed, src: examples[0].src, msg: "type to render", pane: tui.NewPane()}
 }
 
-func (m model) Init() tea.Cmd { return m.ed.Init() }
+func (m model) Init() tea.Cmd { return tea.Batch(m.ed.Init(), m.pane.Init()) }
 
-func (m *model) resize() {
+func (m *model) resize() tea.Cmd {
 	m.ed.SetSize(m.editorWidth(), m.contentH())
+	w, h := m.chartArea()
+	return m.pane.SetSize(w, h)
 }
 
 func (m model) editorWidth() int {
@@ -113,9 +113,10 @@ func (m model) renderCmd() tea.Cmd {
 	}
 	w, h := m.chartArea()
 	runner, src, gen := m.runner, m.src, m.gen
+	cellW, cellH := m.pane.CellPixelSize()
 	return func() tea.Msg {
-		view, warns, err := tui.Render(runner, []byte(src), w, h)
-		return renderedMsg{gen: gen, view: view, warns: warns, err: err}
+		frame, err := tui.RenderFrame(runner, []byte(src), w, h, cellW, cellH)
+		return renderedMsg{gen: gen, frame: frame, err: err}
 	}
 }
 
@@ -161,13 +162,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.w, m.h = msg.Width, msg.Height
-		m.resize()
+		paneCmd := m.resize()
 		// The editor lays out and syntax-highlights during Update, not on
 		// SetSize alone — forward the tick so the pane paints highlighted.
 		var edCmd tea.Cmd
 		m.ed, edCmd = m.ed.Update(msg)
 		m.gen++
-		return m, tea.Batch(edCmd, m.renderCmd())
+		return m, tea.Batch(edCmd, paneCmd, m.renderCmd())
 
 	case tea.KeyMsg:
 		key := msg.String()
@@ -183,6 +184,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if key == "ctrl+n" {
 			return m, m.loadExample((m.ex + 1) % len(examples))
 		}
+		// ctrl+g switches a raster chart between Kitty graphics and glyphs.
+		if key == "ctrl+g" {
+			return m, m.pane.Toggle()
+		}
 		// chords past the example list (alt+9, ctrl+9) fall through to the editor,
 		// as do legacy-terminal artifacts for unsupported ctrl+digit (e.g. ctrl+@)
 
@@ -194,14 +199,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.msg, m.state = msg.err.Error(), 3 // keep the last good chart on screen
 			return m, nil
 		}
-		m.chart = msg.view
-		if len(msg.warns) > 0 {
-			m.msg, m.state = fmt.Sprintf("%d warning(s): %s", len(msg.warns), msg.warns[0].Message), 2
+		paneCmd := m.pane.Apply(msg.frame)
+		if warns := msg.frame.Warnings; len(warns) > 0 {
+			m.msg, m.state = fmt.Sprintf("%d warning(s): %s", len(warns), warns[0].Message), 2
 		} else {
 			m.msg, m.state = "compiled ok", 1
 		}
-		return m, nil
+		return m, paneCmd
 	}
+
+	// The pane's own messages (terminal probe replies, Kitty frames) are not
+	// the editor's; give them to the pane first, then the editor as before.
+	paneCmd := m.pane.Update(msg)
 
 	// everything else (typing, arrows, paste, cursor blink) drives the editor
 	var cmd tea.Cmd
@@ -209,16 +218,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if v := m.ed.GetCurrentContent(); v != m.src {
 		m.src = v
 		m.gen++
-		return m, tea.Batch(cmd, m.renderCmd())
+		return m, tea.Batch(cmd, paneCmd, m.renderCmd())
 	}
-	return m, cmd
+	return m, tea.Batch(cmd, paneCmd)
 }
 
 func (m model) View() tea.View {
 	title := titleStyle.Render("flint-edit") +
-		hintStyle.Render(fmt.Sprintf("   edit the spec, watch it render  ·  ctrl+n next example (or ctrl/alt+1-%d)  ·  ctrl+c quit", len(examples)))
+		hintStyle.Render(fmt.Sprintf("   edit the spec, watch it render  ·  ctrl+n next example (or ctrl/alt+1-%d)  ·  ctrl+g image mode  ·  ctrl+c quit", len(examples)))
 
-	chart := m.chart
+	chart := m.pane.View()
 	if strings.TrimSpace(chart) == "" {
 		chart = hintStyle.Render("(compiling…)")
 	}

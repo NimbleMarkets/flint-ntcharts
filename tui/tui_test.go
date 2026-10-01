@@ -133,7 +133,7 @@ func TestModelDropsStaleRenderedMsg(t *testing.T) {
 	msgB := cmdB()
 	next, _ = m.Update(msgB)
 	m = next.(Model)
-	viewAfterB := m.chartView
+	viewAfterB := m.pane.View()
 	if strings.TrimSpace(viewAfterB) == "" {
 		t.Fatal("expected B's render to be applied")
 	}
@@ -142,7 +142,7 @@ func TestModelDropsStaleRenderedMsg(t *testing.T) {
 	next, _ = m.Update(msgA)
 	m = next.(Model)
 
-	if m.chartView != viewAfterB {
+	if m.pane.View() != viewAfterB {
 		t.Fatal("stale render for input A must not overwrite the newer B render")
 	}
 	if m.err != nil {

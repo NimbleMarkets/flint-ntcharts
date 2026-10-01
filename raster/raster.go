@@ -25,12 +25,53 @@ import (
 // ErrBlank is returned when the chart rendered without error but drew no data.
 var ErrBlank = errors.New("raster: chart rendered blank")
 
-// Render draws the ECharts option (as flint emits it) at w×h pixels.
+// Render draws the ECharts option (as flint emits it) at w×h pixels. It
+// returns [ErrBlank] when the chart's data drew nothing.
 func Render(option []byte, w, h int) (image.Image, error) {
-	if w <= 0 || h <= 0 {
-		return nil, fmt.Errorf("raster: bad size %dx%d", w, h)
+	img, ink, err := render(Sanitize(option), w, h)
+	if err != nil {
+		return nil, err
 	}
-	buf, err := renderPNG(Sanitize(option), w, h)
+	if ink < inkThreshold {
+		return nil, ErrBlank
+	}
+	return img, nil
+}
+
+// dataInk is the share of the image the chart's data draws in colour, for
+// calibrating and testing the blank check.
+func dataInk(option []byte, w, h int) (float64, error) {
+	_, ink, err := render(option, w, h)
+	return ink, err
+}
+
+// inkThreshold is the data-ink share below which a chart counts as blank.
+// Sparse scatter plots measure about 0.0016 and charts that drew nothing
+// measure 0 (see TestDataInkIgnoresTheLegend), so the bar sits between them.
+const inkThreshold = 0.0003
+
+func render(option []byte, w, h int) (image.Image, float64, error) {
+	if w <= 0 || h <= 0 {
+		return nil, 0, fmt.Errorf("raster: bad size %dx%d", w, h)
+	}
+	full, err := renderImage(option, w, h)
+	if err != nil {
+		return nil, 0, err
+	}
+	ink := saturatedShare(full)
+	// Axes, grid lines and text are gray, but a legend's swatches are
+	// saturated, so a chart whose series drew nothing can still show colour.
+	// Subtract what the same chart shows with every series' data removed.
+	if bare, ok := withoutData(option); ok {
+		if empty, err := renderImage(bare, w, h); err == nil {
+			ink -= saturatedShare(empty)
+		}
+	}
+	return full, ink, nil
+}
+
+func renderImage(option []byte, w, h int) (image.Image, error) {
+	buf, err := renderPNG(option, w, h)
 	if err != nil {
 		return nil, err
 	}
@@ -38,10 +79,26 @@ func Render(option []byte, w, h int) (image.Image, error) {
 	if err != nil {
 		return nil, fmt.Errorf("raster: decode PNG: %w", err)
 	}
-	if !hasInk(img) {
-		return nil, ErrBlank
-	}
 	return img, nil
+}
+
+// withoutData returns the option with every series' data emptied, keeping
+// axes, legend and series names.
+func withoutData(option []byte) ([]byte, bool) {
+	var o map[string]any
+	if json.Unmarshal(option, &o) != nil {
+		return nil, false
+	}
+	series, _ := o["series"].([]any)
+	for _, s := range series {
+		if sm, ok := s.(map[string]any); ok {
+			if _, has := sm["data"]; has {
+				sm["data"] = []any{}
+			}
+		}
+	}
+	out, err := json.Marshal(o)
+	return out, err == nil
 }
 
 func renderPNG(option []byte, w, h int) (buf []byte, err error) {
@@ -62,13 +119,9 @@ func renderPNG(option []byte, w, h int) (buf []byte, err error) {
 	return p.Bytes()
 }
 
-// hasInk reports whether the image holds data colour. Axes, grid lines and
-// labels are gray; series are drawn in saturated colours, so a chart with
-// none of them drew nothing. A handful of pixels is not data (a stray mark),
-// so a small fraction of the image is required. Measured on flint's own
-// charts, sparse scatter plots reach 0.0016 and charts that drew nothing are
-// exactly 0, so the bar sits well below the first and above the second.
-func hasInk(img image.Image) bool {
+// saturatedShare is the fraction of (sampled) pixels with a saturated colour.
+// Series are drawn in saturated colours; axes, grid lines and labels are gray.
+func saturatedShare(img image.Image) float64 {
 	b := img.Bounds()
 	const stride = 2
 	var sampled, saturated int
@@ -81,7 +134,10 @@ func hasInk(img image.Image) bool {
 			}
 		}
 	}
-	return sampled > 0 && float64(saturated)/float64(sampled) >= 0.0003
+	if sampled == 0 {
+		return 0
+	}
+	return float64(saturated) / float64(sampled)
 }
 
 func chroma(r, g, b uint32) uint32 {

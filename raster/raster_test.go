@@ -106,7 +106,7 @@ func TestRenderDrawsCharts(t *testing.T) {
 // go-analyze renders these without an error but draws an empty plot. Render
 // must say so instead of handing back a blank image.
 func TestRenderRefusesBlankCharts(t *testing.T) {
-	for _, name := range []string{"waterfall", "heatmap"} {
+	for _, name := range []string{"waterfall", "waterfall-legend", "heatmap"} {
 		t.Run(name, func(t *testing.T) {
 			img, err := Render(fixture(t, name), 640, 400)
 			if !errors.Is(err, ErrBlank) {
@@ -116,6 +116,27 @@ func TestRenderRefusesBlankCharts(t *testing.T) {
 				t.Fatal("a blank render must not return an image")
 			}
 		})
+	}
+}
+
+// The legend's colour swatches are saturated too. A chart whose only colour is
+// its legend is still blank, and a chart with data is not blank just because
+// the legend is large.
+func TestDataInkIgnoresTheLegend(t *testing.T) {
+	for name, wantInk := range map[string]bool{
+		"waterfall-legend": false, // legend + axes, no bars
+		"grouped-bar":      true,
+		"scatter-size":     true, // sparse dots
+		"pie":              true,
+	} {
+		ink, err := dataInk(Sanitize(fixture(t, name)), 640, 400)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		t.Logf("%-18s data ink %.5f", name, ink)
+		if got := ink >= inkThreshold; got != wantInk {
+			t.Errorf("%s: data ink %.5f -> ink=%v, want %v", name, ink, got, wantInk)
+		}
 	}
 }
 

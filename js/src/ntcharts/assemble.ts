@@ -16,7 +16,19 @@ import type { NtSpec, NtSpecOut, NtFormat } from "./types.js";
 // (terminal cells are a fixed budget, not a freely growable canvas like
 // pixels); pass a `canvasSize` larger than `baseSize` in the chart spec to
 // explicitly allow growth beyond the base.
-const TERMINAL_OPTIONS: AssembleOptions = { minStep: 1, defaultBandSize: 3, stepPadding: 0.2, maxStretch: 1 };
+//
+// minSubplotSize: flint floors the plot size it budgets for at this value
+// (default 60, a pixel number). Left at 60, a 20-cell-wide chart would be
+// budgeted as if it were 60 wide and keep 60 categories. 4 is the smallest
+// plot this backend emits (see the Math.max floors on emit.width/height).
+const TERMINAL_OPTIONS: AssembleOptions = {
+  minStep: 1, defaultBandSize: 3, stepPadding: 0.2, maxStretch: 1, minSubplotSize: 4,
+};
+
+// Fitted-domain padding used when `includeZero_y: false` overrides a decision
+// that carried none (flint pads only decisions that already excluded zero).
+// 0.05 is the fraction flint's own non-zero decisions use.
+const OVERRIDE_DOMAIN_PAD = 0.05;
 
 export interface NtInstantiateContext {
   channelSemantics: Record<string, ChannelSemantics>;
@@ -82,6 +94,7 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
       cs.zero = computeZeroDecision(cs.semanticAnnotation.semanticType, axis, markType, nums);
     }
   }
+  applyAxisProperties(template, channelSemantics, input.chart_spec.chartProperties, warn);
 
   // STEP 0a/0c + PHASE 1: layout.
   const declaration: LayoutDeclaration =
@@ -125,6 +138,59 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
   result._width = emit.width;
   result._height = emit.height;
   return result;
+}
+
+// applyAxisProperties handles the per-axis chart properties upstream backends
+// honour after the zero decision: `includeZero_<axis>` and `logScale_<axis>`.
+//
+// includeZero mirrors upstream (assemble: "markCognitiveChannel === position"
+// charts only): an explicit true/false replaces the decision's `zero`. This
+// backend can act on it for the Y axis of position charts, where templates
+// pin y_axis.min/max; anywhere else it says so instead of ignoring the
+// request — the X axis is never pinned, and bar charts keep a zero baseline
+// because the terminal bar model always draws from zero.
+//
+// logScale: ntcharts-spec has no log axis, so the chart stays linear and a
+// warning says why.
+function applyAxisProperties(
+  template: ChartTemplateDef,
+  channelSemantics: Record<string, ChannelSemantics>,
+  chartProperties: Record<string, unknown> | undefined,
+  warn: (w: ChartWarning) => void,
+): void {
+  if (!chartProperties) return;
+  const positional = template.markCognitiveChannel === "position";
+  for (const axis of ["x", "y"] as const) {
+    const cs = channelSemantics[axis];
+    const zeroChoice = chartProperties[`includeZero_${axis}`];
+    if (zeroChoice === true || zeroChoice === false) {
+      if (axis === "y" && positional && cs?.type === "quantitative" && cs.zero) {
+        cs.zero = {
+          ...cs.zero,
+          zero: zeroChoice,
+          domainPadFraction: zeroChoice ? cs.zero.domainPadFraction : cs.zero.domainPadFraction || OVERRIDE_DOMAIN_PAD,
+        };
+      } else {
+        warn({
+          severity: "info",
+          code: "chart-property-unsupported",
+          message: `includeZero_${axis} has no effect on a terminal ${template.chart}` +
+            (axis === "x" ? ": the X axis range always follows the data." : ": its value axis always starts at zero."),
+          channel: axis,
+          field: cs?.field,
+        } as ChartWarning);
+      }
+    }
+    if (chartProperties[`logScale_${axis}`] === true) {
+      warn({
+        severity: "warning",
+        code: "log-scale-unsupported",
+        message: `logScale_${axis} was requested but terminal charts have no logarithmic axis; drawn on a linear scale.`,
+        channel: axis,
+        field: cs?.field,
+      } as ChartWarning);
+    }
+  }
 }
 
 function axisFormat(cs: ChannelSemantics | undefined, warn: (w: ChartWarning) => void): NtFormat | undefined {

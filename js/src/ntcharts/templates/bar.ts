@@ -13,6 +13,11 @@ export const ntBarChartDef: ChartTemplateDef = {
     return {
       axisFlags: result ? { [result.axis]: { banded: true } } : { x: { banded: true } },
       resolvedTypes: result?.resolvedTypes,
+      // The ntcharts bar model spends two cells per category — the bar and
+      // the gap after it — and draws nothing at all once the bar width
+      // reaches zero. A 2-cell step makes flint budget, and truncate with its
+      // usual overflow warning, to what the renderer can actually draw.
+      paramOverrides: { minStep: 2 },
     };
   },
   instantiate: (_spec: any, rawCtx: any) => {

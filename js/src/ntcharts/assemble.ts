@@ -132,6 +132,7 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
     chartType: template.chart, emit, warn, ntFormatX, ntFormatY,
   };
   template.instantiate(emit as any, ctx as any);
+  applyLogScale(emit, input.chart_spec.chartProperties, channelSemantics, warn);
 
   const result: NtSpecOut = { ...emit };
   if (warnings.length) result._warnings = warnings;
@@ -150,8 +151,7 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
 // request — the X axis is never pinned, and bar charts keep a zero baseline
 // because the terminal bar model always draws from zero.
 //
-// logScale: ntcharts-spec has no log axis, so the chart stays linear and a
-// warning says why.
+// logScale is applied after the template has filled the spec; see applyLogScale.
 function applyAxisProperties(
   template: ChartTemplateDef,
   channelSemantics: Record<string, ChannelSemantics>,
@@ -181,16 +181,72 @@ function applyAxisProperties(
         } as ChartWarning);
       }
     }
-    if (chartProperties[`logScale_${axis}`] === true) {
+  }
+}
+
+// applyLogScale turns `logScale_x` / `logScale_y` into ntcharts-spec axis
+// scales. A log axis is only emitted where ntcharts can draw one and the data
+// can sit on it; otherwise the chart stays linear and a warning says why,
+// rather than silently ignoring the request.
+//
+//   - Y: line, scatter, timeseries and OHLC charts. X: line and scatter
+//     (numeric X). Bars, heatmaps and sparklines have no log axis, and a time
+//     axis cannot be logarithmic.
+//   - Every value on the axis must be greater than zero. flint switches to a
+//     symlog scale when the data contains zeros; ntcharts has no symlog.
+//
+// Upstream's zero-baseline and fitted-domain pins are linear-axis decisions
+// (a log axis has no zero), so on a log Y axis they are dropped and ntcharts
+// widens the range to whole decades around the data.
+function applyLogScale(
+  emit: NtSpec,
+  chartProperties: Record<string, unknown> | undefined,
+  channelSemantics: Record<string, ChannelSemantics>,
+  warn: (w: ChartWarning) => void,
+): void {
+  if (!chartProperties) return;
+  for (const axis of ["x", "y"] as const) {
+    if (chartProperties[`logScale_${axis}`] !== true) continue;
+    const reason = logScaleBlocker(emit, axis);
+    if (reason) {
       warn({
         severity: "warning",
         code: "log-scale-unsupported",
-        message: `logScale_${axis} was requested but terminal charts have no logarithmic axis; drawn on a linear scale.`,
+        message: `logScale_${axis} was requested but ${reason}; drawn on a linear scale.`,
         channel: axis,
-        field: cs?.field,
+        field: channelSemantics[axis]?.field,
       } as ChartWarning);
+      continue;
+    }
+    const target = axis === "x" ? (emit.x_axis ??= {}) : (emit.y_axis ??= {});
+    target.scale = "log";
+    if (axis === "y" && emit.y_axis) {
+      delete emit.y_axis.min;
+      delete emit.y_axis.max;
     }
   }
+}
+
+// logScaleBlocker returns why a log axis cannot be drawn on this spec, or
+// undefined if it can.
+function logScaleBlocker(emit: NtSpec, axis: "x" | "y"): string | undefined {
+  const drawsLogY = ["line", "scatter", "timeseries", "ohlc"];
+  const drawsLogX = ["line", "scatter"];
+  if (!(axis === "y" ? drawsLogY : drawsLogX).includes(emit.type)) {
+    if (axis === "x" && drawsLogY.includes(emit.type)) return "its X axis is time";
+    return `a terminal ${emit.type} chart cannot draw a logarithmic axis`;
+  }
+  const values: number[] = [];
+  for (const series of emit.data.series) {
+    for (const p of series.values ?? []) values.push(axis === "y" ? p.y : (p.x as number));
+    for (const p of series.ohlc ?? []) {
+      if (axis === "y") values.push(p.o, p.h, p.l, p.c);
+    }
+  }
+  if (values.some((v) => !(v > 0) || !Number.isFinite(v))) {
+    return "the data has zero or negative values (flint would use a symlog scale, which terminal charts do not have)";
+  }
+  return undefined;
 }
 
 function axisFormat(cs: ChannelSemantics | undefined, warn: (w: ChartWarning) => void): NtFormat | undefined {

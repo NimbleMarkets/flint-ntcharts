@@ -155,14 +155,96 @@ describe("assemble: includeZero and logScale chart properties", () => {
     expect(codes(line({ includeZero_x: true }))).toContain("chart-property-unsupported");
   });
 
-  it("logScale_y is reported and the chart stays linear", () => {
+  it("logScale_y on a line chart emits a log Y axis and lets ntcharts pick decades", () => {
     const out = line({ logScale_y: true });
-    const w = (out._warnings ?? []).find((x) => x.code === "log-scale-unsupported");
-    expect(w, "expected a log-scale-unsupported warning").toBeDefined();
-    expect(w!.channel).toBe("y");
+    expect(out.y_axis?.scale).toBe("log");
+    // flint's zero baseline and fitted domain are linear-axis pins; a log axis has no zero
+    expect(out.y_axis?.min).toBeUndefined();
+    expect(out.y_axis?.max).toBeUndefined();
+    expect(codes(out)).not.toContain("log-scale-unsupported");
   });
 
   it("logScale_y: false asks for nothing and warns about nothing", () => {
-    expect(codes(line({ logScale_y: false }))).not.toContain("log-scale-unsupported");
+    const out = line({ logScale_y: false });
+    expect(out.y_axis?.scale).toBeUndefined();
+    expect(codes(out)).not.toContain("log-scale-unsupported");
+  });
+});
+
+describe("assemble: logScale chart property", () => {
+  const grow = Array.from({ length: 8 }, (_, i) => ({ x: i + 1, y: 10 ** (i / 2) }));
+  const make = (chartType: string, extra: Record<string, unknown>, values: any[] = grow, encodings?: any) =>
+    assembleNtcharts({
+      data: { values },
+      chart_spec: {
+        chartType,
+        encodings: encodings ?? { x: { field: "x" }, y: { field: "y" } },
+        chartProperties: extra,
+      },
+    } as any);
+  const warning = (out: any) => (out._warnings ?? []).find((w: any) => w.code === "log-scale-unsupported");
+
+  it("scatter: both axes", () => {
+    const out = make("Scatter Plot", { logScale_x: true, logScale_y: true });
+    expect(out.x_axis?.scale).toBe("log");
+    expect(out.y_axis?.scale).toBe("log");
+    expect(warning(out)).toBeUndefined();
+  });
+
+  it("numeric line: X and Y", () => {
+    const out = make("Line Chart", { logScale_x: true, logScale_y: true });
+    expect(out.type).toBe("line");
+    expect(out.x_axis?.scale).toBe("log");
+    expect(out.y_axis?.scale).toBe("log");
+  });
+
+  it("time series: Y is honoured, X (time) is reported", () => {
+    const dated = grow.map((r, i) => ({ d: `2026-0${i + 1}-01`, y: r.y }));
+    const enc = { x: { field: "d" }, y: { field: "y" } };
+    const y = make("Line Chart", { logScale_y: true }, dated, enc);
+    expect(y.type).toBe("timeseries");
+    expect(y.y_axis?.scale).toBe("log");
+    const x = make("Line Chart", { logScale_x: true }, dated, enc);
+    expect(x.x_axis?.scale).toBeUndefined();
+    expect(warning(x)?.message).toMatch(/time/i);
+    expect(warning(x)?.channel).toBe("x");
+  });
+
+  it("candlestick: Y", () => {
+    const ohlc = [
+      { d: "2026-01-05", o: 10, h: 14, l: 8, c: 12 },
+      { d: "2026-01-06", o: 12, h: 90, l: 11, c: 80 },
+      { d: "2026-01-07", o: 80, h: 400, l: 70, c: 300 },
+    ];
+    const out = make("Candlestick Chart", { logScale_y: true }, ohlc, {
+      x: { field: "d" }, open: { field: "o" }, high: { field: "h" }, low: { field: "l" }, close: { field: "c" },
+    });
+    expect(out.type).toBe("ohlc");
+    expect(out.y_axis?.scale).toBe("log");
+  });
+
+  it("data containing zero or negatives cannot sit on a log axis: reported, stays linear", () => {
+    for (const bad of [0, -5]) {
+      const values = grow.map((r, i) => (i === 3 ? { ...r, y: bad } : r));
+      const out = make("Scatter Plot", { logScale_y: true }, values);
+      expect(out.y_axis?.scale).toBeUndefined();
+      expect(warning(out)?.message).toMatch(/zero or negative|positive/i);
+    }
+  });
+
+  it("charts ntcharts cannot draw on a log axis are reported", () => {
+    const cats = ["a", "b", "c"].map((k, i) => ({ k, v: 10 ** (i + 1) }));
+    const bar = make("Bar Chart", { logScale_y: true }, cats, { x: { field: "k" }, y: { field: "v" } });
+    expect(bar.y_axis?.scale).toBeUndefined();
+    expect(warning(bar)?.message).toMatch(/bar/i);
+    const spark = make("Sparkline", { logScale_y: true });
+    expect(spark.y_axis?.scale).toBeUndefined();
+    expect(warning(spark)).toBeDefined();
+  });
+
+  it("an axis that was not asked for is left alone", () => {
+    const out = make("Scatter Plot", { logScale_y: true });
+    expect(out.y_axis?.scale).toBe("log");
+    expect(out.x_axis?.scale).toBeUndefined();
   });
 });

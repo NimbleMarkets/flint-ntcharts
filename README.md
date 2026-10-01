@@ -455,8 +455,13 @@ left in place rather than stripped.
   - `includeZero_y` on a bar chart, and `includeZero_x` anywhere, cannot be honoured (the
     terminal bar model always draws from zero; the X range always follows the data) and
     produce an `info` warning, `chart-property-unsupported`.
-  - `logScale_x` / `logScale_y`: terminal charts have no logarithmic axis yet, so the chart
-    is drawn linear with a `log-scale-unsupported` warning.
+  - `logScale_x` / `logScale_y` (`true`) emit `scale: "log"` on the axis: Y on line, scatter,
+    time-series and candlestick charts, X on numeric line and scatter charts. A log axis has
+    no zero, so flint's zero baseline and fitted domain are dropped and ntcharts widens the
+    range to whole decades. Where it cannot be drawn the chart stays linear with a
+    `log-scale-unsupported` warning: bars, heatmaps and sparklines; a time X axis; and data
+    containing zero or negative values (flint would use a symlog scale; terminal charts have
+    none).
   - `candleStyle` (`line` / `block`) on candlestick charts.
 - **Bar charts are truncated to what the terminal can draw.** The ntcharts bar model needs
   two cells per bar (the bar and its gap), so a chart `W` cells wide shows at most `W/2`

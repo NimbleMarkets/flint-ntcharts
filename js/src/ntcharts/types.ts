@@ -14,6 +14,7 @@ export interface NtXAxis {
   type?: "category" | "time" | "value";
   labels?: string[];
   format?: NtFormat;
+  scale?: "linear" | "log";
 }
 
 export interface NtYAxis {
@@ -22,6 +23,7 @@ export interface NtYAxis {
   max?: number;
   labels?: string[]; // added for heatmap row labels (Task 5)
   format?: NtFormat;
+  scale?: "linear" | "log";
 }
 
 export interface NtDataPoint {

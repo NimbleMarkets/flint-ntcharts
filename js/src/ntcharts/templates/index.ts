@@ -9,6 +9,9 @@ import { ntSparklineDef } from "./sparkline.js";
 import { ntEcdfPlotDef } from "./ecdf.js";
 import { ntConnectedScatterDef } from "./connected-scatter.js";
 import { ntBubbleChartDef } from "./bubble.js";
+import { ntHistogramDef } from "./histogram.js";
+import { ntAreaChartDef } from "./area.js";
+import { ntLollipopChartDef } from "./lollipop.js";
 
 const defs: ChartTemplateDef[] = [];
 
@@ -29,3 +32,6 @@ ntRegister(ntSparklineDef);
 ntRegister(ntEcdfPlotDef);
 ntRegister(ntConnectedScatterDef);
 ntRegister(ntBubbleChartDef);
+ntRegister(ntHistogramDef);
+ntRegister(ntAreaChartDef);
+ntRegister(ntLollipopChartDef);

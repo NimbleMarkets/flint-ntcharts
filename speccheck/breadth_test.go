@@ -12,10 +12,10 @@ import (
 	"github.com/NimbleMarkets/ntcharts/v2/spec"
 )
 
-// TestGroup1ChartsDrawThroughTheRenderer compiles ECDF, connected scatter and
-// bubble requests with the embedded compiler and builds them with the real
+// TestBreadthChartsDrawThroughTheRenderer compiles ECDF, connected scatter, bubble,
+// histogram, area and lollipop requests with the embedded compiler and builds them with the real
 // ntcharts renderer: Build must accept the spec and the view must show it.
-func TestGroup1ChartsDrawThroughTheRenderer(t *testing.T) {
+func TestBreadthChartsDrawThroughTheRenderer(t *testing.T) {
 	ctx := context.Background()
 	r, err := compile.New(ctx)
 	if err != nil {
@@ -39,6 +39,24 @@ func TestGroup1ChartsDrawThroughTheRenderer(t *testing.T) {
 			`{"data":{"values":[{"x":1,"y":1,"t":0},{"x":4,"y":3,"t":1},{"x":2,"y":5,"t":2},{"x":6,"y":2,"t":3}]},
 			  "chart_spec":{"chartType":"Connected Scatter Plot","encodings":{"x":{"field":"x"},"y":{"field":"y"},"order":{"field":"t"}}}}`,
 			nil,
+		},
+		{
+			"histogram",
+			`{"data":{"values":[{"v":1},{"v":2},{"v":2},{"v":3},{"v":3},{"v":3},{"v":4},{"v":4},{"v":5},{"v":9}]},
+			  "chart_spec":{"chartType":"Histogram","chartProperties":{"binCount":4},"encodings":{"x":{"field":"v"}}}}`,
+			[]string{"1–3", "7–9"},
+		},
+		{
+			"area",
+			`{"data":{"values":[{"x":1,"y":2},{"x":2,"y":5},{"x":3,"y":3},{"x":4,"y":6}]},
+			  "chart_spec":{"chartType":"Area Chart","encodings":{"x":{"field":"x"},"y":{"field":"y"}}}}`,
+			nil,
+		},
+		{
+			"lollipop",
+			`{"data":{"values":[{"c":"a","n":3},{"c":"b","n":5},{"c":"c","n":2}]},
+			  "chart_spec":{"chartType":"Lollipop Chart","encodings":{"x":{"field":"c"},"y":{"field":"n"}}}}`,
+			[]string{"a", "b", "c"},
 		},
 		{
 			"bubble",

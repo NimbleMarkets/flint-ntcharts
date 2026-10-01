@@ -100,10 +100,10 @@ func TestExamplesCompile(t *testing.T) {
 	next, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 24})
 	m = next.(model)
 
-	if len(examples) != 3 {
-		t.Fatalf("expected 3 examples, got %d", len(examples))
+	if len(examples) != 5 {
+		t.Fatalf("expected 5 examples, got %d", len(examples))
 	}
-	for i, want := range []string{"Bar Chart", "Timeseries Line", "Candlestick"} {
+	for i, want := range []string{"Bar Chart", "Timeseries Line", "Candlestick", "Log Scale", "Heatmap"} {
 		if examples[i].name != want {
 			t.Fatalf("examples[%d].name = %q, want %q", i, examples[i].name, want)
 		}
@@ -202,7 +202,7 @@ func TestNextExampleCycles(t *testing.T) {
 	m = next.(model)
 
 	ctrlN := tea.KeyPressMsg{Code: 'n', Mod: tea.ModCtrl}
-	for step, want := range []int{1, 2, 0, 1} {
+	for step, want := range []int{1, 2, 3, 4, 0, 1} {
 		next, cmd := m.Update(ctrlN)
 		m = next.(model)
 		if m.src != examples[want].src {
@@ -216,13 +216,18 @@ func TestNextExampleCycles(t *testing.T) {
 		}
 	}
 
-	// A direct jump resets where ctrl+n continues from.
-	next, _ = m.Update(tea.KeyPressMsg{Code: '3', Mod: tea.ModAlt})
+	// A direct jump resets where ctrl+n continues from: after jumping to the
+	// last example, ctrl+n wraps to the first.
+	last := len(examples)
+	next, _ = m.Update(tea.KeyPressMsg{Code: rune('0' + last), Mod: tea.ModAlt})
 	m = next.(model)
+	if m.src != examples[last-1].src {
+		t.Fatalf("alt+%d did not load the last example", last)
+	}
 	next, _ = m.Update(ctrlN)
 	m = next.(model)
 	if m.src != examples[0].src {
-		t.Fatal("ctrl+n after alt+3 should wrap to example 1")
+		t.Fatal("ctrl+n after the last example should wrap to example 1")
 	}
 }
 

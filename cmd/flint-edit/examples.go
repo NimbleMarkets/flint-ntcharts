@@ -63,4 +63,44 @@ var examples = []example{
     }
   }
 }`},
+	{name: "Log Scale", src: `{
+  "data": { "values": [
+    {"month": "2026-01-01", "users": 120},
+    {"month": "2026-02-01", "users": 310},
+    {"month": "2026-03-01", "users": 900},
+    {"month": "2026-04-01", "users": 2400},
+    {"month": "2026-05-01", "users": 7100},
+    {"month": "2026-06-01", "users": 19500},
+    {"month": "2026-07-01", "users": 61000},
+    {"month": "2026-08-01", "users": 170000}
+  ]},
+  "chart_spec": {
+    "chartType": "Line Chart",
+    "chartProperties": { "logScale_y": true },
+    "encodings": { "x": {"field": "month"}, "y": {"field": "users"} }
+  }
+}`},
+	{name: "Heatmap", src: `{
+  "data": { "values": [
+    {"day": "Mon", "when": "Morning",   "visits": 62},
+    {"day": "Mon", "when": "Afternoon", "visits": 91},
+    {"day": "Mon", "when": "Evening",   "visits": 35},
+    {"day": "Tue", "when": "Morning",   "visits": 58},
+    {"day": "Tue", "when": "Afternoon", "visits": 97},
+    {"day": "Tue", "when": "Evening",   "visits": 41},
+    {"day": "Wed", "when": "Morning",   "visits": 66},
+    {"day": "Wed", "when": "Afternoon", "visits": 84},
+    {"day": "Wed", "when": "Evening",   "visits": 52},
+    {"day": "Thu", "when": "Morning",   "visits": 49},
+    {"day": "Thu", "when": "Afternoon", "visits": 88},
+    {"day": "Thu", "when": "Evening",   "visits": 60},
+    {"day": "Fri", "when": "Morning",   "visits": 44},
+    {"day": "Fri", "when": "Afternoon", "visits": 73},
+    {"day": "Fri", "when": "Evening",   "visits": 79}
+  ]},
+  "chart_spec": {
+    "chartType": "Heatmap",
+    "encodings": { "x": {"field": "when"}, "y": {"field": "day"}, "color": {"field": "visits"} }
+  }
+}`},
 }

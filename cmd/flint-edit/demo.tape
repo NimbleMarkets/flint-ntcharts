@@ -33,11 +33,16 @@ Backspace@200ms 3
 Type "320"
 Sleep 2.5s
 
-# ctrl+n steps through the built-in examples: a time series, then candlesticks.
+# ctrl+n steps through the built-in examples: a time series, candlesticks,
+# a log-scale line, then a heatmap.
+Ctrl+N
+Sleep 2.5s
+Ctrl+N
+Sleep 2.5s
+Ctrl+N
+Sleep 2.5s
 Ctrl+N
 Sleep 3s
-Ctrl+N
-Sleep 3.5s
 
 Hide
 Ctrl+C

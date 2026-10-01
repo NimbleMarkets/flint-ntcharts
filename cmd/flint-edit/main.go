@@ -213,7 +213,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() tea.View {
 	title := titleStyle.Render("flint-edit") +
-		hintStyle.Render("   edit the spec, watch it render  ·  ctrl+n next example (or ctrl/alt+1·2·3)  ·  ctrl+c quit")
+		hintStyle.Render(fmt.Sprintf("   edit the spec, watch it render  ·  ctrl+n next example (or ctrl/alt+1-%d)  ·  ctrl+c quit", len(examples)))
 
 	chart := m.chart
 	if strings.TrimSpace(chart) == "" {

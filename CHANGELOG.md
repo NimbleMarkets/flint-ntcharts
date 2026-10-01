@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+ * Requires ntcharts v2.6.0 (log axes, labelled and filled heatmaps, connected numeric line charts).
+ * `logScale_x` / `logScale_y` now draw a logarithmic axis on line, scatter, time-series and candlestick charts instead of warning; charts or data a log axis cannot show still warn and stay linear.
+ * `flint-edit` gains Log Scale and Heatmap examples.
  * Fix bar charts with many categories rendering as an empty axis: charts are truncated to the bars the terminal can draw (half the width, or half the height for horizontal bars), with an `overflow` warning.
  * `includeZero_y` is honoured on line, time-series and scatter charts. Where a property cannot be honoured (`includeZero_x`, `includeZero_y` on bars, `logScale_x`/`logScale_y`) the envelope now carries a warning instead of ignoring it silently.
 

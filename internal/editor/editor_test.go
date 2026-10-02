@@ -380,3 +380,66 @@ func TestLoadingAnExampleResetsTheRendererToggle(t *testing.T) {
 		t.Fatal("example 2 must start as text again")
 	}
 }
+
+func lastLine(v string) string {
+	lines := strings.Split(v, "\n")
+	return lines[len(lines)-1]
+}
+
+// The lower-right corner names the example and the kind of chart.
+func TestCornerLabelNamesTheExampleAndChart(t *testing.T) {
+	m := sized(t)
+	last := ansi.Strip(lastLine(m.View().Content))
+	if !strings.HasSuffix(last, "1/8 · Bar Chart") {
+		t.Fatalf("last line %q should end with the example number and chart", last)
+	}
+	if w := ansi.StringWidth(last); w != m.w {
+		t.Fatalf("status row is %d columns wide, want the window's %d", w, m.w)
+	}
+
+	next, _ := m.Update(tea.KeyPressMsg{Code: 'n', Mod: tea.ModCtrl})
+	m = next.(model)
+	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "2/8 · Line Chart") {
+		t.Fatalf("after ctrl+n the label is %q", last)
+	}
+
+	next, _ = m.Update(tea.KeyPressMsg{Code: '8', Mod: tea.ModAlt})
+	m = next.(model)
+	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "8/8 · Grouped Bar Chart") {
+		t.Fatalf("on the raster example the label is %q", last)
+	}
+}
+
+func TestCornerLabelFollowsTheEditedSpec(t *testing.T) {
+	m := sized(t)
+	m.src = strings.Replace(examples[0].src, `"Bar Chart"`, `"Scatter Plot"`, 1)
+	last := ansi.Strip(lastLine(m.View().Content))
+	if !strings.HasSuffix(last, "1/8 (edited) · Scatter Plot") {
+		t.Fatalf("label %q should show the edit and the chart now in the spec", last)
+	}
+}
+
+func TestCornerLabelSurvivesALongStatusMessage(t *testing.T) {
+	m := sized(t)
+	m.msg = strings.Repeat("a very long status message ", 20)
+	last := ansi.Strip(lastLine(m.View().Content))
+	if !strings.HasSuffix(last, "1/8 · Bar Chart") || ansi.StringWidth(last) != m.w {
+		t.Fatalf("label lost or row mis-sized: %q (%d cols)", last, ansi.StringWidth(last))
+	}
+}
+
+func TestChartKind(t *testing.T) {
+	cases := map[string]string{
+		`{"chart_spec":{"chartType":"Heatmap"}}`:              "Heatmap",
+		`{"type":"bar","width":10,"height":4}`:                "bar",
+		`{"spec":{"type":"line"}}`:                            "line",
+		`{"nothing":true}`:                                    "unknown chart",
+		`{not json`:                                           "invalid JSON",
+		`{"chart_spec":{"chartType":"Bar Chart"},"type":"x"}`: "Bar Chart",
+	}
+	for in, want := range cases {
+		if got := chartKind(in); got != want {
+			t.Errorf("chartKind(%s) = %q, want %q", in, got, want)
+		}
+	}
+}

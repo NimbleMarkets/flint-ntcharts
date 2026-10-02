@@ -6,11 +6,13 @@
 package editor
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/ionut-t/goeditor"
 
 	"github.com/NimbleMarkets/flint-ntcharts/tui"
@@ -285,16 +287,49 @@ func (m model) statusLine() string {
 	case 3:
 		style = errStyle
 	}
-	return style.Render(truncate(m.msg, m.w))
+	// The lower-right corner names the example and the kind of chart, so it is
+	// clear what is on screen after switching or editing. The status message
+	// gives way to it when the row is short.
+	label := m.cornerLabel()
+	labelW := ansi.StringWidth(label)
+	if m.w <= labelW {
+		return hintStyle.Render(ansi.Truncate(label, m.w, ""))
+	}
+	msg := ansi.Truncate(m.msg, m.w-labelW-1, "…")
+	gap := m.w - ansi.StringWidth(msg) - labelW
+	return style.Render(msg) + strings.Repeat(" ", gap) + hintStyle.Render(label)
 }
 
-func truncate(s string, n int) string {
-	if n <= 1 {
-		return ""
+// cornerLabel is "3/8 · Candlestick Chart": the example loaded last and the
+// chart type in the spec now, so it follows edits. "(edited)" marks a spec that
+// no longer matches the example it started as.
+func (m model) cornerLabel() string {
+	edited := ""
+	if m.src != examples[m.ex].src {
+		edited = " (edited)"
 	}
-	r := []rune(s)
-	if len(r) <= n {
-		return s
+	return fmt.Sprintf("%d/%d%s · %s", m.ex+1, len(examples), edited, chartKind(m.src))
+}
+
+// chartKind names the chart a document asks for: the flint chartType, else a
+// raw ntcharts-spec's type (bare or inside a compile envelope).
+func chartKind(src string) string {
+	var doc struct {
+		ChartSpec struct {
+			ChartType string `json:"chartType"`
+		} `json:"chart_spec"`
+		Type string `json:"type"`
+		Spec struct {
+			Type string `json:"type"`
+		} `json:"spec"`
 	}
-	return string(r[:n-1]) + "…"
+	if err := json.Unmarshal([]byte(src), &doc); err != nil {
+		return "invalid JSON"
+	}
+	for _, kind := range []string{doc.ChartSpec.ChartType, doc.Type, doc.Spec.Type} {
+		if kind != "" {
+			return kind
+		}
+	}
+	return "unknown chart"
 }

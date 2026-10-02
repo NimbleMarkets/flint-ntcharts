@@ -90,7 +90,7 @@ func (p *Pane) Apply(f Frame) tea.Cmd {
 // stops switching on its own.
 func (p *Pane) Toggle() (tea.Cmd, string) {
 	if !p.hasImage {
-		return nil, "ctrl+g switches raster charts between Kitty graphics and glyphs; this chart is text"
+		return nil, "ctrl+g switches raster charts between Kitty graphics and glyphs; this chart is text (add \"renderer\": \"raster\" to the document, or try flint-edit -example 8)"
 	}
 	p.modeFixed = true
 	before := p.pic.Mode()

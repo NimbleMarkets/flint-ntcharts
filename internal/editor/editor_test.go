@@ -283,3 +283,28 @@ func TestCtrlGReportsOnTheStatusLine(t *testing.T) {
 		t.Fatalf("status %q should name the new mode", m.msg)
 	}
 }
+
+func TestNewAtStartsOnTheChosenExample(t *testing.T) {
+	r, err := compile.New(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { r.Close(context.Background()) })
+
+	m := NewAt(r, 7).(model)
+	if m.src != examples[7].src || m.ed.GetCurrentContent() != examples[7].src || m.ex != 7 {
+		t.Fatal("NewAt(7) did not start on example 8")
+	}
+	// out of range falls back to the first example instead of panicking
+	for _, i := range []int{-1, len(examples)} {
+		if got := NewAt(r, i).(model); got.src != examples[0].src {
+			t.Fatalf("NewAt(%d) did not fall back to example 1", i)
+		}
+	}
+}
+
+func TestExampleCountMatchesWhatTheHintAdvertises(t *testing.T) {
+	if got := Count(); got != len(examples) {
+		t.Fatalf("Count() = %d, want %d", got, len(examples))
+	}
+}

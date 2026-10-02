@@ -8,6 +8,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 
@@ -18,6 +19,13 @@ import (
 )
 
 func main() {
+	example := flag.Int("example", 1, fmt.Sprintf("start on built-in example `N` (1-%d); 8 is a raster chart", editor.Count()))
+	flag.Parse()
+	if *example < 1 || *example > editor.Count() {
+		fmt.Fprintf(os.Stderr, "flint-edit: -example must be 1-%d\n", editor.Count())
+		os.Exit(2)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -28,7 +36,7 @@ func main() {
 	}
 	defer runner.Close(ctx)
 
-	p := tea.NewProgram(editor.New(runner), tea.WithContext(ctx))
+	p := tea.NewProgram(editor.NewAt(runner, *example-1), tea.WithContext(ctx))
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "flint-edit: %v\n", err)
 		os.Exit(1)

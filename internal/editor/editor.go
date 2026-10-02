@@ -57,6 +57,23 @@ func New(c tui.Compiler) tea.Model {
 	return newModel(c)
 }
 
+// NewAt is New starting on example i (0-based). An out-of-range i starts on the
+// first example.
+func NewAt(c tui.Compiler, i int) tea.Model {
+	if i < 0 || i >= len(examples) {
+		i = 0
+	}
+	m := newModel(c)
+	m.ex = i
+	m.ed.SetContent(examples[i].src)
+	_ = m.ed.SetCursorPositionEnd()
+	m.src = examples[i].src
+	return m
+}
+
+// Count is the number of built-in examples.
+func Count() int { return len(examples) }
+
 func newModel(c tui.Compiler) model {
 	ed := goeditor.New(40, 20)
 	ed.DisableVimMode(true) // plain, non-modal typing

@@ -2,6 +2,7 @@ package editor
 
 import (
 	"context"
+	"image"
 	"strings"
 	"testing"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/NimbleMarkets/flint-ntcharts/compile"
+	"github.com/NimbleMarkets/flint-ntcharts/tui"
+	"github.com/NimbleMarkets/ntcharts/v2/picture"
 )
 
 func newTestModel(t *testing.T) model {
@@ -251,5 +254,32 @@ func TestExampleChord(t *testing.T) {
 		if ok != c.ok || (ok && idx != c.idx) {
 			t.Errorf("exampleChord(%q) = (%d, %v), want (%d, %v)", c.key, idx, ok, c.idx, c.ok)
 		}
+	}
+}
+
+// ctrl+g must never look like a dead key: it reports the mode it chose, or why
+// it could not change it.
+func TestCtrlGReportsOnTheStatusLine(t *testing.T) {
+	prev := picture.KittySupported()
+	t.Cleanup(func() { picture.ForceKittyCapability(prev) })
+
+	m := newTestModel(t)
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = next.(model)
+	m.pane.Apply(tui.Frame{Image: image.NewRGBA(image.Rect(0, 0, 160, 96))})
+	ctrlG := tea.KeyPressMsg{Code: 'g', Mod: tea.ModCtrl}
+
+	picture.ForceKittyCapability(picture.KittyCapabilityUnsupported)
+	next, _ = m.Update(ctrlG)
+	m = next.(model)
+	if !strings.Contains(m.msg, "FLINT_KITTY=1") {
+		t.Fatalf("status %q should explain why Kitty is unavailable", m.msg)
+	}
+
+	picture.ForceKittyCapability(picture.KittyCapabilitySupported)
+	next, _ = m.Update(ctrlG)
+	m = next.(model)
+	if !strings.Contains(m.msg, "Kitty graphics") {
+		t.Fatalf("status %q should name the new mode", m.msg)
 	}
 }

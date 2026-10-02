@@ -2,12 +2,15 @@ package tui
 
 import (
 	"fmt"
+	"image"
 	"strings"
 	"testing"
 	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/NimbleMarkets/ntcharts/v2/picture"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func drainCmd(t *testing.T, m Model, cmd tea.Cmd) Model {
@@ -180,5 +183,21 @@ func TestStatusLineWholeLineClamped(t *testing.T) {
 	line := m.statusLine()
 	if w := lipgloss.Width(line); w > 20 {
 		t.Fatalf("status line width = %d, want <= 20; line: %q", w, line)
+	}
+}
+
+func TestGKeyReportsOnTheStatusLine(t *testing.T) {
+	prev := picture.KittySupported()
+	t.Cleanup(func() { picture.ForceKittyCapability(prev) })
+	picture.ForceKittyCapability(picture.KittyCapabilityUnsupported)
+
+	m := New(newTestRunner(t))
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 200, Height: 30})
+	m = next.(Model)
+	m.pane.Apply(Frame{Image: image.NewRGBA(image.Rect(0, 0, 160, 96))})
+	next, _ = m.Update(tea.KeyPressMsg{Code: 'g'})
+	m = next.(Model)
+	if !strings.Contains(ansi.Strip(m.statusLine()), "FLINT_KITTY=1") {
+		t.Fatalf("status line %q should explain why Kitty is unavailable", ansi.Strip(m.statusLine()))
 	}
 }

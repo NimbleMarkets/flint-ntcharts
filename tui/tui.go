@@ -47,7 +47,8 @@ type Model struct {
 	pane     Pane
 	warnings []envelope.Warning
 	err      error
-	waiting  bool // no document received yet
+	waiting  bool   // no document received yet
+	notice   string // one-off message from a key (g), shown on the status line until the next render
 
 	// gen is bumped on every InputMsg/WindowSizeMsg so in-flight renderedMsg
 	// results from a superseded request can be told apart from the latest
@@ -79,6 +80,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil // stale result from a superseded request
 		}
 		m.warnings, m.err = msg.warnings, msg.err
+		m.notice = ""
 		if msg.err == nil {
 			// errors keep the last good chart
 			return m, m.pane.Apply(Frame{Text: msg.view, Image: msg.img})
@@ -92,7 +94,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "g":
-			return m, m.pane.Toggle() // Kitty graphics <-> glyphs, for raster charts
+			cmd, note := m.pane.Toggle() // Kitty graphics <-> glyphs, for raster charts
+			m.notice = note
+			return m, cmd
 		}
 	}
 	// Anything else is the pane's: terminal probe replies, Kitty frames.
@@ -150,6 +154,12 @@ func (m Model) statusLine() string {
 			n = 0
 		}
 		line = left + "  " + errStyle.Render(ansi.Truncate(m.err.Error(), n, "…"))
+	case m.notice != "":
+		n := m.width - lipgloss.Width(left) - 2
+		if n <= 0 {
+			n = 0
+		}
+		line = left + "  " + statusStyle.Render(ansi.Truncate(m.notice, n, "…"))
 	case len(m.warnings) > 0:
 		w := fmt.Sprintf("%d warning(s): %s", len(m.warnings), m.warnings[0].Message)
 		n := m.width - lipgloss.Width(left) - 2

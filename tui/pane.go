@@ -2,6 +2,7 @@ package tui
 
 import (
 	"image"
+	"os"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -39,7 +40,18 @@ type Pane struct {
 }
 
 // NewPane returns an empty pane in glyph mode.
+//
+// The Kitty probe only runs in terminals that look Kitty-aware (kitty,
+// Ghostty, WezTerm, iTerm, tmux passthrough), so detection can miss. The
+// FLINT_KITTY environment variable overrides it: 1 forces Kitty graphics on,
+// 0 forces them off (glyphs only).
 func NewPane() Pane {
+	switch os.Getenv("FLINT_KITTY") {
+	case "1":
+		picture.ForceKittyCapability(picture.KittyCapabilitySupported)
+	case "0":
+		picture.ForceKittyCapability(picture.KittyCapabilityUnsupported)
+	}
 	return Pane{pic: picture.New()}
 }
 
@@ -71,11 +83,26 @@ func (p *Pane) Apply(f Frame) tea.Cmd {
 	return nil
 }
 
-// Toggle switches an image between Kitty graphics and glyphs. After it, the
-// pane stops switching on its own.
-func (p *Pane) Toggle() tea.Cmd {
+// Toggle switches an image between Kitty graphics and glyphs and returns a
+// one-line note saying what happened, for a status line. It can decline: the
+// picture model enters Kitty mode only when the terminal said it supports it,
+// and the note then names the FLINT_KITTY override. After a toggle the pane
+// stops switching on its own.
+func (p *Pane) Toggle() (tea.Cmd, string) {
+	if !p.hasImage {
+		return nil, "ctrl+g switches raster charts between Kitty graphics and glyphs; this chart is text"
+	}
 	p.modeFixed = true
-	return p.pic.Toggle()
+	before := p.pic.Mode()
+	cmd := p.pic.Toggle()
+	switch after := p.pic.Mode(); {
+	case after == before:
+		return cmd, "this terminal did not report Kitty graphics support, so images stay as glyphs (FLINT_KITTY=1 forces Kitty graphics)"
+	case after == picture.PictureKitty:
+		return cmd, "image mode: Kitty graphics"
+	default:
+		return cmd, "image mode: glyphs"
+	}
 }
 
 // Update handles the pane's own messages: the terminal's probe replies and the

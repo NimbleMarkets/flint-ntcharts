@@ -186,7 +186,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		// ctrl+g switches a raster chart between Kitty graphics and glyphs.
 		if key == "ctrl+g" {
-			return m, m.pane.Toggle()
+			cmd, note := m.pane.Toggle()
+			m.msg, m.state = note, 0
+			return m, cmd
 		}
 		// chords past the example list (alt+9, ctrl+9) fall through to the editor,
 		// as do legacy-terminal artifacts for unsupported ctrl+digit (e.g. ctrl+@)

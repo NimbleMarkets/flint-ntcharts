@@ -117,14 +117,14 @@ tasks:
       - go run ./cmd/flint-tui {{.CLI_ARGS}}
 
   demo:
-    desc: 'Live split-pane editor — type a spec on the left, watch it render on the right'
+    desc: 'Live split-pane editor — e.g. `task demo` or `task demo -- -example 8` (the raster chart)'
     cmds:
-      - go run ./cmd/flint-edit
+      - go run ./cmd/flint-edit {{.CLI_ARGS}}
 
   edit:
     desc: 'Alias for demo — the flint-edit split-pane playground'
     cmds:
-      - go run ./cmd/flint-edit
+      - go run ./cmd/flint-edit {{.CLI_ARGS}}
 
   site:
     desc: 'Build the browser demo (flint-edit in go-booba) into demo/dist/'
@@ -135,6 +135,22 @@ tasks:
   site-serve:
     desc: 'Serve the browser demo at http://localhost:8000/'
     deps: [site]
+    cmds:
+      - echo 'Serving at http://localhost:8000/'
+      - python3 -m http.server 8000 --bind 127.0.0.1 -d demo/dist
+
+  site-dev:
+    desc: "Build the browser demo with this tree's compiler bundle, so raster charts work before booba-shim has a release that carries them"
+    deps: [browser-shim]
+    dir: demo
+    env:
+      FLINTCHART_SHIM: ../js/dist/flintchart-shim.mjs
+    cmds:
+      - go run ./cmd/site
+
+  site-serve-dev:
+    desc: "Serve the dev browser demo (this tree's compiler bundle) at http://localhost:8000/"
+    deps: [site-dev]
     cmds:
       - echo 'Serving at http://localhost:8000/'
       - python3 -m http.server 8000 --bind 127.0.0.1 -d demo/dist

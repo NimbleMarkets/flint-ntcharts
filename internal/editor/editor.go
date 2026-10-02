@@ -204,8 +204,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if key == "ctrl+n" {
 			return m, m.loadExample((m.ex + 1) % len(examples))
 		}
-		// ctrl+r (alt+r where the browser keeps ctrl+r for reload) flips the
-		// chart between the text and raster renderers. It is a view setting for
+		// ctrl+r (alt+r in terminals that send Alt as Meta, for those where ctrl+r
+		// is taken) flips the chart between the text and raster renderers. It is a view setting for
 		// the example on screen, so it does not edit the document.
 		if key == "ctrl+r" || key == "alt+r" {
 			m.renderer = tui.ToggleRenderer([]byte(m.src), m.renderer)

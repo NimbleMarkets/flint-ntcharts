@@ -343,7 +343,7 @@ func TestCtrlRTogglesTextAndRaster(t *testing.T) {
 	}
 }
 
-func TestAltRIsTheBrowserSafeAliasForCtrlR(t *testing.T) {
+func TestAltRIsAnAliasForCtrlR(t *testing.T) {
 	m := sized(t)
 	m = pressAndRender(t, m, tea.KeyPressMsg{Code: 'r', Mod: tea.ModAlt})
 	if !m.pane.HasImage() {

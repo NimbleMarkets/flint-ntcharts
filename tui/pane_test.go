@@ -144,3 +144,18 @@ func TestPaneStaysInGlyphModeWhenForcedOff(t *testing.T) {
 		t.Fatal("FLINT_KITTY=0 must keep glyph mode")
 	}
 }
+
+func TestPaneReportsWhetherItHoldsAnImage(t *testing.T) {
+	p := NewPane()
+	if p.HasImage() {
+		t.Fatal("an empty pane holds no image")
+	}
+	p.Apply(Frame{Image: solid(16, 16, color.White)})
+	if !p.HasImage() {
+		t.Fatal("pane should hold the image")
+	}
+	p.Apply(Frame{Text: "t"})
+	if p.HasImage() {
+		t.Fatal("a text frame clears the image")
+	}
+}

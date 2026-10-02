@@ -61,7 +61,7 @@ type viewer interface{ View() string }
 // renderDoc compiles/builds raw into a chart view sized w×h (the chart area,
 // status line already excluded by the caller). Errors return err with view
 // empty; the model decides what stays on screen.
-func renderDoc(compiler Compiler, raw []byte, w, h, cellW, cellH int) renderedMsg {
+func renderDoc(compiler Compiler, raw []byte, w, h int, opts FrameOptions) renderedMsg {
 	kind, err := sniff(raw)
 	if err != nil {
 		return renderedMsg{err: err}
@@ -81,25 +81,35 @@ func renderDoc(compiler Compiler, raw []byte, w, h, cellW, cellH int) renderedMs
 	var warnings []envelope.Warning
 	switch kind {
 	case docFlint:
-		opts := []envelope.Option{envelope.WithBaseSize(w, h)}
-		if wantsRaster(raw) {
-			msg, reason := renderRaster(compiler, raw, w, h, cellW, cellH)
+		if opts.Renderer != "" && opts.Renderer != "text" && opts.Renderer != "raster" {
+			return renderedMsg{err: fmt.Errorf("unknown renderer %q: use \"text\" or \"raster\"", opts.Renderer)}
+		}
+		copts := []envelope.Option{envelope.WithBaseSize(w, h)}
+		if wantsRaster(raw, opts.Renderer) {
+			msg, reason := renderRaster(compiler, raw, w, h, opts.CellW, opts.CellH)
 			if reason == nil {
 				return msg
 			}
 			// Fall back to the text renderer, and say why.
 			warnings = append(warnings, *reason)
-			opts = append(opts, envelope.WithRenderer("text"))
+			copts = append(copts, envelope.WithRenderer("text"))
 			var terr error
-			s, _, terr = compiler.Compile(context.Background(), raw, opts...)
+			s, _, terr = compiler.Compile(context.Background(), raw, copts...)
 			if terr != nil {
 				return renderedMsg{err: fmt.Errorf("raster renderer: %s; the text renderer cannot draw it either (%w)", strings.TrimSuffix(reason.Message, "; showing the text chart"), terr)}
 			}
 			break
 		}
+		if opts.Renderer == "text" {
+			// An explicit choice beats a "renderer" key in the document.
+			copts = append(copts, envelope.WithRenderer("text"))
+		}
 		var cw []envelope.Warning
-		s, cw, err = compiler.Compile(context.Background(), raw, opts...)
+		s, cw, err = compiler.Compile(context.Background(), raw, copts...)
 		if err != nil {
+			if opts.Renderer == "text" {
+				return renderedMsg{err: fmt.Errorf("the text renderer cannot draw this chart (%w); switch to the raster renderer", err)}
+			}
 			return renderedMsg{err: err}
 		}
 		warnings = cw
@@ -143,26 +153,54 @@ func renderDoc(compiler Compiler, raw []byte, w, h, cellW, cellH int) renderedMs
 // drawn as text (with a raster-unavailable warning); use [RenderFrame] to get
 // the image.
 func Render(c Compiler, raw []byte, w, h int) (view string, warnings []envelope.Warning, err error) {
-	m := renderDoc(c, raw, w, h, 0, 0)
+	m := renderDoc(c, raw, w, h, FrameOptions{})
 	return m.view, m.warnings, m.err
 }
 
+// FrameOptions says how RenderFrame draws.
+type FrameOptions struct {
+	// CellW and CellH are the terminal cell size in pixels. 0 means "this host
+	// cannot show images", and a raster document renders as text.
+	CellW, CellH int
+	// Renderer overrides the document's own "renderer": "text" or "raster".
+	// Empty leaves the document in charge. A host's toggle key sets it.
+	Renderer string
+}
+
 // RenderFrame is Render for hosts that can show images: a document with
-// "renderer": "raster" comes back as an image sized to the w×h cell area at
-// cellW×cellH pixels per cell. When the raster renderer cannot draw the chart
-// (go-analyze drew it blank or failed, or the compiler has no CompileResult)
-// the frame is the text renderer's chart and carries a raster-fallback or
-// raster-unavailable warning. A cell size of 0 means "no images".
-func RenderFrame(c Compiler, raw []byte, w, h, cellW, cellH int) (Frame, error) {
-	m := renderDoc(c, raw, w, h, cellW, cellH)
+// "renderer": "raster" (or opts.Renderer "raster") comes back as an image sized
+// to the w×h cell area at opts.CellW×opts.CellH pixels per cell. When the raster
+// renderer cannot draw the chart (go-analyze drew it blank or failed, or the
+// compiler has no CompileResult) the frame is the text renderer's chart and
+// carries a raster-fallback or raster-unavailable warning.
+func RenderFrame(c Compiler, raw []byte, w, h int, opts FrameOptions) (Frame, error) {
+	m := renderDoc(c, raw, w, h, opts)
 	if m.err != nil {
 		return Frame{}, m.err
 	}
 	return Frame{Text: m.view, Image: m.img, Warnings: m.warnings}, nil
 }
 
-// wantsRaster reports whether the document asks for the raster renderer.
-func wantsRaster(raw []byte) bool {
+// ToggleRenderer returns the renderer override that flips the chart on screen:
+// "raster" if it is drawn as text now, "text" if as raster. current is the
+// override in force ("" if none), and raw the document, whose own "renderer"
+// decides when there is no override.
+func ToggleRenderer(raw []byte, current string) string {
+	if wantsRaster(raw, current) {
+		return "text"
+	}
+	return "raster"
+}
+
+// wantsRaster reports whether the chart should be drawn by the raster renderer:
+// the override if there is one, else the document's own "renderer".
+func wantsRaster(raw []byte, override string) bool {
+	switch override {
+	case "raster":
+		return true
+	case "text":
+		return false
+	}
 	var probe struct {
 		Renderer string `json:"renderer"`
 	}

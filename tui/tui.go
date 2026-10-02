@@ -49,6 +49,7 @@ type Model struct {
 	err      error
 	waiting  bool   // no document received yet
 	notice   string // one-off message from a key (g), shown on the status line until the next render
+	renderer string // the toggle key's override of the document's renderer: \"\", \"text\" or \"raster\"
 
 	// gen is bumped on every InputMsg/WindowSizeMsg so in-flight renderedMsg
 	// results from a superseded request can be told apart from the latest
@@ -93,6 +94,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "r":
+			// Flip the chart on screen between the text and raster renderers.
+			if m.raw == nil {
+				return m, nil
+			}
+			m.renderer = ToggleRenderer(m.raw, m.renderer)
+			m.notice = "renderer: " + m.renderer
+			m.gen++
+			return m, m.rerenderCmd()
 		case "g":
 			cmd, note := m.pane.Toggle() // Kitty graphics <-> glyphs, for raster charts
 			m.notice = note
@@ -112,8 +122,9 @@ func (m Model) rerenderCmd() tea.Cmd {
 	compiler, raw, gen := m.compiler, m.raw, m.gen
 	w, h := m.width, m.height-1 // reserve the status line
 	cellW, cellH := m.pane.CellPixelSize()
+	opts := FrameOptions{CellW: cellW, CellH: cellH, Renderer: m.renderer}
 	return func() tea.Msg {
-		msg := renderDoc(compiler, raw, w, h, cellW, cellH)
+		msg := renderDoc(compiler, raw, w, h, opts)
 		msg.gen = gen
 		return msg
 	}
@@ -145,7 +156,11 @@ func (m Model) View() tea.View {
 }
 
 func (m Model) statusLine() string {
-	left := statusStyle.Render(fmt.Sprintf("flint-tui · %s · %dx%d", orDash(m.source), m.width, m.height))
+	mode := ""
+	if m.pane.HasImage() {
+		mode = " · raster"
+	}
+	left := statusStyle.Render(fmt.Sprintf("flint-tui · %s · %dx%d%s", orDash(m.source), m.width, m.height, mode))
 	var line string
 	switch {
 	case m.err != nil:

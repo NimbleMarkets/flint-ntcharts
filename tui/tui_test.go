@@ -201,3 +201,36 @@ func TestGKeyReportsOnTheStatusLine(t *testing.T) {
 		t.Fatalf("status line %q should explain why Kitty is unavailable", ansi.Strip(m.statusLine()))
 	}
 }
+
+// r flips the renderer for the document on screen, without touching the document.
+func TestRKeyTogglesTheRenderer(t *testing.T) {
+	m := New(newTestRunner(t))
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+	m = next.(Model)
+	next, cmd := m.Update(InputMsg{Raw: []byte(barDoc), Source: "bar.json"})
+	m = next.(Model)
+	next, _ = m.Update(cmd())
+	m = next.(Model)
+	if m.pane.HasImage() {
+		t.Fatal("a text document starts as text")
+	}
+
+	next, cmd = m.Update(tea.KeyPressMsg{Code: 'r'})
+	m = next.(Model)
+	if cmd == nil {
+		t.Fatal("r must re-render")
+	}
+	next, _ = m.Update(cmd())
+	m = next.(Model)
+	if !m.pane.HasImage() {
+		t.Fatalf("after r the chart should be an image; status %q", ansi.Strip(m.statusLine()))
+	}
+
+	next, cmd = m.Update(tea.KeyPressMsg{Code: 'r'})
+	m = next.(Model)
+	next, _ = m.Update(cmd())
+	m = next.(Model)
+	if m.pane.HasImage() {
+		t.Fatal("a second r should return to text")
+	}
+}

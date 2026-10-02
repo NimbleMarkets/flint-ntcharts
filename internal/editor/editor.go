@@ -42,13 +42,14 @@ type model struct {
 	runner tui.Compiler
 	ed     goeditor.Model
 
-	w, h  int
-	src   string   // last content sent to a render
-	pane  tui.Pane // last good chart: text, or a raster image
-	msg   string   // status line text
-	state int      // 0 pending, 1 ok, 2 warn, 3 error
-	gen   int
-	ex    int // index of the example last loaded; ctrl+n continues from it
+	w, h     int
+	src      string   // last content sent to a render
+	pane     tui.Pane // last good chart: text, or a raster image
+	msg      string   // status line text
+	state    int      // 0 pending, 1 ok, 2 warn, 3 error
+	gen      int
+	ex       int    // index of the example last loaded; ctrl+n continues from it
+	renderer string // the ctrl+r override of the document's renderer: \"\", \"text\" or \"raster\"
 }
 
 // New returns the playground model, compiling through c. The same model runs
@@ -131,8 +132,9 @@ func (m model) renderCmd() tea.Cmd {
 	w, h := m.chartArea()
 	runner, src, gen := m.runner, m.src, m.gen
 	cellW, cellH := m.pane.CellPixelSize()
+	opts := tui.FrameOptions{CellW: cellW, CellH: cellH, Renderer: m.renderer}
 	return func() tea.Msg {
-		frame, err := tui.RenderFrame(runner, []byte(src), w, h, cellW, cellH)
+		frame, err := tui.RenderFrame(runner, []byte(src), w, h, opts)
 		return renderedMsg{gen: gen, frame: frame, err: err}
 	}
 }
@@ -162,6 +164,7 @@ func exampleChord(key string) (int, bool) {
 func (m *model) loadExample(i int) tea.Cmd {
 	ex := examples[i]
 	m.ex = i
+	m.renderer = "" // the new example starts from its own renderer
 	m.ed.SetContent(ex.src)
 	_ = m.ed.SetCursorPositionEnd()
 	// SetContent only swaps the buffer; the editor repaints its viewport at
@@ -201,6 +204,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if key == "ctrl+n" {
 			return m, m.loadExample((m.ex + 1) % len(examples))
 		}
+		// ctrl+r (alt+r where the browser keeps ctrl+r for reload) flips the
+		// chart between the text and raster renderers. It is a view setting for
+		// the example on screen, so it does not edit the document.
+		if key == "ctrl+r" || key == "alt+r" {
+			m.renderer = tui.ToggleRenderer([]byte(m.src), m.renderer)
+			m.gen++
+			return m, m.renderCmd()
+		}
 		// ctrl+g switches a raster chart between Kitty graphics and glyphs.
 		if key == "ctrl+g" {
 			cmd, note := m.pane.Toggle()
@@ -221,6 +232,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		paneCmd := m.pane.Apply(msg.frame)
 		if warns := msg.frame.Warnings; len(warns) > 0 {
 			m.msg, m.state = fmt.Sprintf("%d warning(s): %s", len(warns), warns[0].Message), 2
+		} else if msg.frame.Image != nil {
+			m.msg, m.state = "compiled ok · raster", 1
 		} else {
 			m.msg, m.state = "compiled ok", 1
 		}
@@ -244,7 +257,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() tea.View {
 	title := titleStyle.Render("flint-edit") +
-		hintStyle.Render(fmt.Sprintf("   edit the spec, watch it render  ·  ctrl+n next example (or ctrl/alt+1-%d)  ·  ctrl+g image mode  ·  ctrl+c quit", len(examples)))
+		hintStyle.Render(fmt.Sprintf("   edit the spec, watch it render  ·  ctrl+n next example (or ctrl/alt+1-%d)  ·  ctrl+r renderer  ·  ctrl+g image mode  ·  ctrl+c quit", len(examples)))
 
 	chart := m.pane.View()
 	if strings.TrimSpace(chart) == "" {

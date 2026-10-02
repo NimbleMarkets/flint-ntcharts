@@ -63,6 +63,9 @@ func (p *Pane) Init() tea.Cmd { return p.pic.Init() }
 // renders to the chart area.
 func (p *Pane) CellPixelSize() (w, h int) { return p.pic.CellPixelSize() }
 
+// HasImage reports whether the pane is showing an image, not text.
+func (p *Pane) HasImage() bool { return p.hasImage }
+
 // Mode reports whether images are drawn with Kitty graphics or glyphs.
 func (p *Pane) Mode() picture.PictureMode { return p.pic.Mode() }
 

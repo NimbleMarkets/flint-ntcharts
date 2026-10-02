@@ -60,7 +60,7 @@ func hasCode(ws []envelope.Warning, code string) bool {
 
 func TestRenderFrameRasterDrawsAnImage(t *testing.T) {
 	r := newTestRunner(t)
-	f, err := RenderFrame(r, []byte(groupedDoc), 40, 12, 8, 16)
+	f, err := RenderFrame(r, []byte(groupedDoc), 40, 12, FrameOptions{CellW: 8, CellH: 16})
 	if err != nil {
 		t.Fatalf("RenderFrame: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestRenderFrameRasterDrawsAnImage(t *testing.T) {
 // categories, with an overflow warning, so the raster compile gets pixels.
 func TestRenderFrameRasterLaysOutInPixelsNotCells(t *testing.T) {
 	r := newTestRunner(t)
-	f, err := RenderFrame(r, []byte(groupedDoc), 40, 12, 8, 16)
+	f, err := RenderFrame(r, []byte(groupedDoc), 40, 12, FrameOptions{CellW: 8, CellH: 16})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func TestRenderFrameRasterLaysOutInPixelsNotCells(t *testing.T) {
 
 func TestRenderFrameBlankRasterFallsBackToText(t *testing.T) {
 	r := newTestRunner(t)
-	f, err := RenderFrame(r, []byte(heatmapRasterDoc), 40, 12, 8, 16)
+	f, err := RenderFrame(r, []byte(heatmapRasterDoc), 40, 12, FrameOptions{CellW: 8, CellH: 16})
 	if err != nil {
 		t.Fatalf("RenderFrame: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestRenderFrameBlankRasterFallsBackToText(t *testing.T) {
 
 func TestRenderFrameNoTextFallbackIsAnError(t *testing.T) {
 	r := newTestRunner(t)
-	_, err := RenderFrame(r, []byte(waterfallRasterDoc), 40, 12, 8, 16)
+	_, err := RenderFrame(r, []byte(waterfallRasterDoc), 40, 12, FrameOptions{CellW: 8, CellH: 16})
 	if err == nil {
 		t.Fatal("want an error: raster drew nothing and text cannot draw a waterfall")
 	}
@@ -126,7 +126,7 @@ func (t textOnly) Compile(ctx context.Context, in []byte, opts ...envelope.Optio
 
 func TestRenderFrameRasterNeedsAResultCompiler(t *testing.T) {
 	r := newTestRunner(t)
-	f, err := RenderFrame(textOnly{r}, []byte(barRasterDoc), 40, 12, 8, 16)
+	f, err := RenderFrame(textOnly{r}, []byte(barRasterDoc), 40, 12, FrameOptions{CellW: 8, CellH: 16})
 	if err != nil {
 		t.Fatalf("RenderFrame: %v", err)
 	}
@@ -140,7 +140,7 @@ func TestRenderFrameRasterNeedsAResultCompiler(t *testing.T) {
 
 func TestRenderFrameWithoutCellPixelSizeIsText(t *testing.T) {
 	r := newTestRunner(t)
-	f, err := RenderFrame(r, []byte(barRasterDoc), 40, 12, 0, 0)
+	f, err := RenderFrame(r, []byte(barRasterDoc), 40, 12, FrameOptions{CellW: 0, CellH: 0})
 	if err != nil {
 		t.Fatalf("RenderFrame: %v", err)
 	}
@@ -164,11 +164,88 @@ func TestRenderStringAPIRendersRasterDocumentsAsText(t *testing.T) {
 
 func TestRenderFrameTextDocumentsAreUnchanged(t *testing.T) {
 	r := newTestRunner(t)
-	f, err := RenderFrame(r, []byte(flintDoc), 40, 12, 8, 16)
+	f, err := RenderFrame(r, []byte(flintDoc), 40, 12, FrameOptions{CellW: 8, CellH: 16})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if f.Image != nil || strings.TrimSpace(f.Text) == "" || len(f.Warnings) != 0 {
 		t.Fatalf("text=%q image=%v warnings=%v", f.Text, f.Image, warnCodes(f.Warnings))
+	}
+}
+
+const barDoc = `{
+  "data": {"values": [{"p":"A","r":10},{"p":"B","r":25},{"p":"C","r":15}]},
+  "chart_spec": {"chartType":"Bar Chart","encodings": {"x":{"field":"p"},"y":{"field":"r"}}}
+}`
+
+var cells = FrameOptions{CellW: 8, CellH: 16}
+
+func withRenderer(r string) FrameOptions { o := cells; o.Renderer = r; return o }
+
+func TestRendererOverrideDrawsATextDocumentAsRaster(t *testing.T) {
+	r := newTestRunner(t)
+	f, err := RenderFrame(r, []byte(barDoc), 40, 12, withRenderer("raster"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.Image == nil || f.Text != "" {
+		t.Fatalf("want an image, got text=%q image=%v", f.Text, f.Image)
+	}
+}
+
+func TestRendererOverrideDrawsARasterDocumentAsText(t *testing.T) {
+	r := newTestRunner(t)
+	f, err := RenderFrame(r, []byte(barRasterDoc), 40, 12, withRenderer("text"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.Image != nil || strings.TrimSpace(f.Text) == "" || len(f.Warnings) != 0 {
+		t.Fatalf("want a clean text chart, got text=%q image=%v warnings=%v", f.Text, f.Image, warnCodes(f.Warnings))
+	}
+}
+
+func TestRendererOverrideToTextExplainsWhenTextCannotDrawIt(t *testing.T) {
+	r := newTestRunner(t)
+	_, err := RenderFrame(r, []byte(groupedDoc), 40, 12, withRenderer("text"))
+	if err == nil {
+		t.Fatal("want an error: the text renderer cannot draw grouped bars")
+	}
+	for _, want := range []string{"text renderer", "cannot", "raster"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("error %q lacks %q", err, want)
+		}
+	}
+}
+
+func TestRendererOverrideToRasterFallsBackWhenRasterCannotDrawIt(t *testing.T) {
+	r := newTestRunner(t)
+	heatmap := strings.Replace(heatmapRasterDoc, `"renderer": "raster",`, "", 1)
+	f, err := RenderFrame(r, []byte(heatmap), 40, 12, withRenderer("raster"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.Image != nil || !hasCode(f.Warnings, "raster-fallback") {
+		t.Fatalf("want the text heatmap with raster-fallback, got image=%v warnings=%v", f.Image, warnCodes(f.Warnings))
+	}
+}
+
+func TestRendererOverrideRejectsUnknownNames(t *testing.T) {
+	r := newTestRunner(t)
+	if _, err := RenderFrame(r, []byte(barDoc), 40, 12, withRenderer("pixels")); err == nil {
+		t.Fatal("an unknown renderer must be an error")
+	}
+}
+
+func TestToggleRenderer(t *testing.T) {
+	cases := []struct{ doc, override, want string }{
+		{barDoc, "", "raster"},     // a text document flips to raster
+		{barRasterDoc, "", "text"}, // a raster document flips to text
+		{barDoc, "raster", "text"}, // an override flips back
+		{barRasterDoc, "text", "raster"},
+	}
+	for _, c := range cases {
+		if got := ToggleRenderer([]byte(c.doc), c.override); got != c.want {
+			t.Errorf("ToggleRenderer(doc, %q) = %q, want %q", c.override, got, c.want)
+		}
 	}
 }

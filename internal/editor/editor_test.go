@@ -308,3 +308,75 @@ func TestExampleCountMatchesWhatTheHintAdvertises(t *testing.T) {
 		t.Fatalf("Count() = %d, want %d", got, len(examples))
 	}
 }
+
+func sized(t *testing.T) model {
+	t.Helper()
+	m := newTestModel(t)
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 140, Height: 40})
+	return renderNow(t, next.(model))
+}
+
+func pressAndRender(t *testing.T, m model, k tea.KeyPressMsg) model {
+	t.Helper()
+	next, cmd := m.Update(k)
+	m = next.(model)
+	if cmd == nil {
+		t.Fatalf("%s did not fire a render", k.String())
+	}
+	return renderNow(t, m)
+}
+
+var ctrlR = tea.KeyPressMsg{Code: 'r', Mod: tea.ModCtrl}
+
+func TestCtrlRTogglesTextAndRaster(t *testing.T) {
+	m := sized(t) // example 1: a bar chart, text
+	if m.pane.HasImage() {
+		t.Fatal("example 1 starts as text")
+	}
+	m = pressAndRender(t, m, ctrlR)
+	if !m.pane.HasImage() || !strings.Contains(m.msg, "raster") {
+		t.Fatalf("ctrl+r should show the raster image; image=%v status=%q", m.pane.HasImage(), m.msg)
+	}
+	m = pressAndRender(t, m, ctrlR)
+	if m.pane.HasImage() || strings.Contains(m.msg, "raster") {
+		t.Fatalf("a second ctrl+r should return to text; image=%v status=%q", m.pane.HasImage(), m.msg)
+	}
+}
+
+func TestAltRIsTheBrowserSafeAliasForCtrlR(t *testing.T) {
+	m := sized(t)
+	m = pressAndRender(t, m, tea.KeyPressMsg{Code: 'r', Mod: tea.ModAlt})
+	if !m.pane.HasImage() {
+		t.Fatal("alt+r should toggle like ctrl+r")
+	}
+}
+
+// Example 8 (grouped bars) is raster-only. Toggling to text must keep the image
+// on screen and say why, not blank the chart.
+func TestCtrlROnARasterOnlyChartKeepsTheImage(t *testing.T) {
+	m := sized(t)
+	next, _ := m.Update(tea.KeyPressMsg{Code: '8', Mod: tea.ModAlt})
+	m = renderNow(t, next.(model))
+	if !m.pane.HasImage() {
+		t.Fatalf("example 8 should be an image; status %q", m.msg)
+	}
+	m = pressAndRender(t, m, ctrlR)
+	if !m.pane.HasImage() {
+		t.Fatal("the image must stay when text cannot draw the chart")
+	}
+	if m.state != 3 || !strings.Contains(m.msg, "text renderer") {
+		t.Fatalf("status %q (state %d) should say the text renderer cannot draw it", m.msg, m.state)
+	}
+}
+
+// The toggle is a view setting for the example on screen; loading another
+// example starts from that example's own renderer.
+func TestLoadingAnExampleResetsTheRendererToggle(t *testing.T) {
+	m := sized(t)
+	m = pressAndRender(t, m, ctrlR) // example 1 as raster
+	next, _ := m.Update(tea.KeyPressMsg{Code: '2', Mod: tea.ModAlt})
+	m = renderNow(t, next.(model))
+	if m.pane.HasImage() {
+		t.Fatal("example 2 must start as text again")
+	}
+}

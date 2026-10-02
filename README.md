@@ -54,8 +54,9 @@ flint-chart:
 `cmd/flint-edit` (`go install …/cmd/flint-edit@latest`; also [in the browser](https://nimblemarkets.github.io/flint-ntcharts/); source in [`demo/`](demo/), `task site-serve` builds it locally) is a split-pane playground: edit the
 JSON on the left, watch the chart on the right. `ctrl+n` steps through the built-in examples
 (bar, time series, candlestick, log scale, heatmap, histogram, calendar heatmap, grouped bars as a raster chart);
-`ctrl+1`‥`8` / `alt+1`‥`8` jump to one directly in terminals that deliver those chords. `flint-edit -example 8` starts on example 8. `ctrl+g` switches a raster chart
-between Kitty graphics and glyphs.
+`ctrl+1`‥`8` / `alt+1`‥`8` jump to one directly in terminals that deliver those chords. `flint-edit -example 8` starts on example 8. `ctrl+r` (`alt+r` where a browser keeps ctrl+r for reload)
+flips the chart between the text and raster renderers, for the example on screen and without editing it; `ctrl+g` switches a
+raster chart between Kitty graphics and glyphs.
 
 To work on the repo itself: the compiled `flint.wasm` module and its build provenance
 (`compile/flint.wasm.buildinfo`) are committed, so no *build* step (no Javy, no `js/` install)
@@ -274,6 +275,7 @@ needing a fresh document push.
 ### Keys
 
 - `q` or `ctrl+c` — quit
+- `r` — flip the chart between the text and raster renderers (a chart one of them cannot draw stays as it is, with the reason on the status line)
 - `g` — switch a raster chart between Kitty graphics and glyphs
 
 ### Status line and error handling

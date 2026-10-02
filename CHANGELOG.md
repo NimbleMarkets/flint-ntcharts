@@ -1,10 +1,14 @@
 # CHANGELOG
 
-## Unreleased
+## v0.3.0 (2026-10-02)
 
- * Opt-in raster renderer: `"renderer": "raster"` on the input (or `envelope.WithRenderer`) compiles to flint's ECharts option, and the new `raster` package draws it as an image with go-analyze. This adds chart types the text renderer cannot draw, such as grouped bars, pies and radars. `Render` returns `raster.ErrBlank` when the chart drew no data. New API: `envelope.ParseResult`, `envelope.Result`, `compile.Runner.CompileResult`. The embedded compiler grows from 1.9 MB to 3.4 MB.
- * `flint-tui` and `flint-edit` show raster charts with Kitty graphics or glyphs (`g` / `ctrl+g` to switch, with a status-line note; `FLINT_KITTY=1` forces Kitty graphics where detection misses) and fall back to the text chart, with a `raster-fallback` warning, when raster cannot draw one. New API: `tui.RenderFrame`, `tui.Frame`, `tui.Pane`, `tui.ResultCompiler`. Press `r` (`ctrl+r`, or `alt+r` where the terminal sends Alt as Meta, in `flint-edit`) to flip a chart between the text and raster renderers; a chart one of them cannot draw stays as it is, with the reason on the status line. New API: `tui.FrameOptions` (`RenderFrame` takes it), `tui.ToggleRenderer`. `flint-edit` shows the example number and chart type in the lower-right corner. `flint-edit` gains a Grouped Bars (raster) example and a `-example N` flag to start on one.
+ * Opt-in raster renderer. Add `"renderer": "raster"` to the input (or pass `envelope.WithRenderer("raster")`) and the compiler returns flint's ECharts option; the new `raster` package draws it as an image with go-analyze. This covers chart types the text renderer cannot draw, such as grouped bars, pies and radars. Where go-analyze draws nothing, `raster.Render` returns `raster.ErrBlank`.
+ * `flint-tui` and `flint-edit` show raster charts as Kitty graphics or half-block glyphs, and fall back to the text chart with a `raster-fallback` warning when raster cannot draw one. `FLINT_KITTY=1` forces Kitty graphics where detection misses.
+ * Keys: `r` in `flint-tui`, `ctrl+r` in `flint-edit`, flips a chart between the text and raster renderers; `g` / `ctrl+g` switches an image between Kitty graphics and glyphs.
+ * `flint-edit` gains a Grouped Bars (raster) example, a `-example N` flag, and the example number and chart type in the lower-right corner.
  * An unknown chart type now suggests the raster renderer in its error.
+ * New API: `envelope.ParseResult`, `envelope.Result`, `envelope.WithRenderer`, `compile.Runner.CompileResult`, `tui.RenderFrame`, `tui.FrameOptions`, `tui.Frame`, `tui.Pane`, `tui.ResultCompiler`, `tui.ToggleRenderer`. `tui.Render` is unchanged.
+ * Cost: the embedded compiler grows from 1.9 MB to 3.4 MB, and the main module now depends on go-analyze.
 
 ## v0.2.1 (2026-10-01)
 

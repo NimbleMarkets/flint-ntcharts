@@ -6,7 +6,7 @@ require (
 	github.com/NimbleMarkets/booba-shim v0.4.0
 	github.com/NimbleMarkets/flint-ntcharts v0.2.0
 	github.com/NimbleMarkets/go-booba v0.7.0
-	github.com/NimbleMarkets/ntcharts/v2 v2.6.0
+	github.com/NimbleMarkets/ntcharts/v2 v2.7.0
 )
 
 require (

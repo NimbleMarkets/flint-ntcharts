@@ -197,7 +197,7 @@ func TestGKeyReportsOnTheStatusLine(t *testing.T) {
 	m.pane.Apply(Frame{Image: image.NewRGBA(image.Rect(0, 0, 160, 96))})
 	next, _ = m.Update(tea.KeyPressMsg{Code: 'g'})
 	m = next.(Model)
-	if !strings.Contains(ansi.Strip(m.statusLine()), "FLINT_KITTY=1") {
+	if !strings.Contains(ansi.Strip(m.statusLine()), "NTCHARTS_KITTY=supported") {
 		t.Fatalf("status line %q should explain why Kitty is unavailable", ansi.Strip(m.statusLine()))
 	}
 }

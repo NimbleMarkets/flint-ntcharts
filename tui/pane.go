@@ -42,15 +42,18 @@ type Pane struct {
 // NewPane returns an empty pane in glyph mode.
 //
 // The Kitty probe only runs in terminals that look Kitty-aware (kitty,
-// Ghostty, WezTerm, iTerm, tmux passthrough), so detection can miss. The
-// FLINT_KITTY environment variable overrides it: 1 forces Kitty graphics on,
-// 0 forces them off (glyphs only).
+// Ghostty, WezTerm, iTerm, tmux passthrough), so detection can miss. ntcharts
+// reads NTCHARTS_KITTY=supported|unsupported at start-up to override it.
+// FLINT_KITTY=1|0 is an older alias for the same thing and applies only when
+// NTCHARTS_KITTY is not set.
 func NewPane() Pane {
-	switch os.Getenv("FLINT_KITTY") {
-	case "1":
-		picture.ForceKittyCapability(picture.KittyCapabilitySupported)
-	case "0":
-		picture.ForceKittyCapability(picture.KittyCapabilityUnsupported)
+	if os.Getenv("NTCHARTS_KITTY") == "" {
+		switch os.Getenv("FLINT_KITTY") {
+		case "1":
+			picture.ForceKittyCapability(picture.KittyCapabilitySupported)
+		case "0":
+			picture.ForceKittyCapability(picture.KittyCapabilityUnsupported)
+		}
 	}
 	return Pane{pic: picture.New()}
 }
@@ -89,18 +92,23 @@ func (p *Pane) Apply(f Frame) tea.Cmd {
 // Toggle switches an image between Kitty graphics and glyphs and returns a
 // one-line note saying what happened, for a status line. It can decline: the
 // picture model enters Kitty mode only when the terminal said it supports it,
-// and the note then names the FLINT_KITTY override. After a toggle the pane
-// stops switching on its own.
+// and the note then carries ntcharts' reason (probe pending, terminal not
+// recognized, or probe unanswered), which names the NTCHARTS_KITTY override.
+// After a toggle the pane stops switching on its own.
 func (p *Pane) Toggle() (tea.Cmd, string) {
 	if !p.hasImage {
 		return nil, "ctrl+g switches raster charts between Kitty graphics and glyphs; this chart is text (add \"renderer\": \"raster\" to the document, or try flint-edit -example 8)"
 	}
 	p.modeFixed = true
 	before := p.pic.Mode()
+	blocked := p.pic.ToggleBlocked()
 	cmd := p.pic.Toggle()
 	switch after := p.pic.Mode(); {
 	case after == before:
-		return cmd, "this terminal did not report Kitty graphics support, so images stay as glyphs (FLINT_KITTY=1 forces Kitty graphics)"
+		if blocked != nil {
+			return cmd, "images stay as glyphs: " + blocked.Error()
+		}
+		return cmd, "image mode unchanged"
 	case after == picture.PictureKitty:
 		return cmd, "image mode: Kitty graphics"
 	default:

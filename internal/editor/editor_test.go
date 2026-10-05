@@ -272,7 +272,7 @@ func TestCtrlGReportsOnTheStatusLine(t *testing.T) {
 	picture.ForceKittyCapability(picture.KittyCapabilityUnsupported)
 	next, _ = m.Update(ctrlG)
 	m = next.(model)
-	if !strings.Contains(m.msg, "FLINT_KITTY=1") {
+	if !strings.Contains(m.msg, "NTCHARTS_KITTY=supported") {
 		t.Fatalf("status %q should explain why Kitty is unavailable", m.msg)
 	}
 

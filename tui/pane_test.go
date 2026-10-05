@@ -91,8 +91,8 @@ func TestPaneToggleSaysWhatItDid(t *testing.T) {
 }
 
 // The picture model refuses Kitty mode unless the terminal said it supports it.
-// A silent no-op looks like a broken key, so the pane explains and names the
-// override.
+// A silent no-op looks like a broken key, so the pane reports ntcharts' own
+// reason, which names the fix.
 func TestPaneToggleExplainsWhyItCannotEnterKitty(t *testing.T) {
 	forceKitty(t, picture.KittyCapabilityUnsupported)
 	p := NewPane()
@@ -103,10 +103,26 @@ func TestPaneToggleExplainsWhyItCannotEnterKitty(t *testing.T) {
 	if p.Mode() != picture.PictureGlyph {
 		t.Fatal("must stay in glyph mode")
 	}
-	for _, want := range []string{"did not report", "FLINT_KITTY=1"} {
+	for _, want := range []string{"glyphs", "NTCHARTS_KITTY=supported"} {
 		if !strings.Contains(note, want) {
 			t.Fatalf("note %q lacks %q", note, want)
 		}
+	}
+	if want := picture.ErrKittyNotDetected.Error(); !strings.Contains(note, want) {
+		t.Fatalf("note %q should carry ntcharts' reason %q", note, want)
+	}
+}
+
+// While the probe is unanswered the reason is different, and so is the advice.
+func TestPaneToggleSaysWhenTheProbeIsStillPending(t *testing.T) {
+	forceKitty(t, picture.KittyCapabilityUnknown)
+	p := NewPane()
+	p.SetSize(20, 6)
+	p.Apply(Frame{Image: solid(160, 96, color.White)})
+
+	_, note := p.Toggle()
+	if !strings.Contains(note, picture.ErrKittyProbePending.Error()) {
+		t.Fatalf("note %q should say the probe is pending", note)
 	}
 }
 
@@ -120,7 +136,8 @@ func TestPaneToggleWithATextChartSaysSo(t *testing.T) {
 	}
 }
 
-func TestFlintKittyForcesTheCapability(t *testing.T) {
+// FLINT_KITTY predates ntcharts' own NTCHARTS_KITTY and stays as an alias.
+func TestFlintKittyIsAnAliasForNtchartsKitty(t *testing.T) {
 	forceKitty(t, picture.KittyCapabilityUnsupported)
 	t.Setenv("FLINT_KITTY", "1")
 	NewPane()
@@ -131,6 +148,18 @@ func TestFlintKittyForcesTheCapability(t *testing.T) {
 	NewPane()
 	if picture.KittySupported() != picture.KittyCapabilityUnsupported {
 		t.Fatal("FLINT_KITTY=0 must force Kitty off")
+	}
+}
+
+// ntcharts reads NTCHARTS_KITTY itself, at start-up. When both are set the
+// documented variable wins, so the alias cannot undo it.
+func TestNtchartsKittyBeatsTheFlintKittyAlias(t *testing.T) {
+	forceKitty(t, picture.KittyCapabilityUnsupported) // what NTCHARTS_KITTY=unsupported set at init
+	t.Setenv("NTCHARTS_KITTY", "unsupported")
+	t.Setenv("FLINT_KITTY", "1")
+	NewPane()
+	if picture.KittySupported() != picture.KittyCapabilityUnsupported {
+		t.Fatal("NTCHARTS_KITTY must win over FLINT_KITTY")
 	}
 }
 

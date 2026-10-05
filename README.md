@@ -155,9 +155,10 @@ if errors.Is(err, raster.ErrBlank) { /* go-analyze drew nothing: use the text re
 
 In `flint-tui` and `flint-edit` (and any host using `tui.RenderFrame` and `tui.Pane`) the chart is shown with
 Kitty graphics when the terminal answers the probe, and with half-block glyphs otherwise. The probe only runs in
-terminals that look Kitty-aware (kitty, Ghostty, WezTerm, iTerm, tmux passthrough); set `FLINT_KITTY=1` to force
-Kitty graphics where detection misses, or `FLINT_KITTY=0` for glyphs only. `g` (`ctrl+g` in `flint-edit`) switches
-modes and says on the status line what it did, or why it could not. When raster cannot
+terminals that look Kitty-aware (kitty, Ghostty, WezTerm, iTerm, tmux passthrough); set `NTCHARTS_KITTY=supported` to
+force Kitty graphics where detection misses, or `NTCHARTS_KITTY=unsupported` for glyphs only (`FLINT_KITTY=1` / `0`
+is an older alias, used only when `NTCHARTS_KITTY` is unset). `g` (`ctrl+g` in `flint-edit`) switches modes and says
+on the status line what it did, or why it could not, using the reason ntcharts reports. When raster cannot
 draw a chart, the viewer falls back to the text chart and says why in a `raster-fallback` warning.
 
 go-analyze draws only part of what flint emits. Measured over flint's own test corpus, about 80%

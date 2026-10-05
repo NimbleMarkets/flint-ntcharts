@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v0.3.1 (2026-10-05)
+
+ * Requires ntcharts v2.7.0.
+ * When `g` / `ctrl+g` cannot switch an image to Kitty graphics, the status line now gives ntcharts' reason (probe still pending, terminal not recognized, or probe unanswered), which names the `NTCHARTS_KITTY=supported` override. `FLINT_KITTY` still works as an alias and applies only when `NTCHARTS_KITTY` is not set.
+
 ## v0.3.0 (2026-10-02)
 
  * Opt-in raster renderer. Add `"renderer": "raster"` to the input (or pass `envelope.WithRenderer("raster")`) and the compiler returns flint's ECharts option; the new `raster` package draws it as an image with go-analyze. This covers chart types the text renderer cannot draw, such as grouped bars, pies and radars. Where go-analyze draws nothing, `raster.Render` returns `raster.ErrBlank`.

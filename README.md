@@ -344,6 +344,30 @@ To develop against an unreleased `ntcharts`, add a local override without touchi
 go work init . ../ntcharts      # go.work is gitignored
 ```
 
+The local ntcharts dual-Y-axis work can be exercised with native spec inputs:
+
+```sh
+go run ./cmd/flint-tui testdata/dual-axis/line.json
+go run ./cmd/flint-tui testdata/dual-axis/scatter.json
+go run ./cmd/flint-tui testdata/dual-axis/timeseries.json
+go test ./tui -run TestRenderDualAxes -v
+```
+
+Each example puts load (0–100%) on the left and temperature (5–30) on the
+right. Edit the watched JSON or resize the terminal to test the renderer.
+`y2_axis` configures the independent right axis; a series selects it with
+`"y_axis": "right"`. The render checks cover raw specs and envelopes at three
+terminal sizes, including a narrow 44×15 window, and reject right-axis series
+without `y2_axis`. They skip on published ntcharts v2.7, which predates these
+fields; use the local workspace above to run them. The published dependency
+remains unchanged until the dual-axis release is available.
+
+These are native ntcharts specs. The Flint compiler does not yet emit dual
+axes, and its raster toggle does not apply to native specs. As checked on
+2026-10-10, the latest published upstream Flint is still the pinned `0.5.1`;
+upstream `main` (`683d5de`) includes unreleased interaction and validation
+changes, but no shared dual-axis input contract for this backend.
+
 ## Phase 3: TypeScript → ntcharts-spec backend
 
 Phase 3 adds a second, pure-TypeScript compile path that runs `flint-chart`'s core assembly

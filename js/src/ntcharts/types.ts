@@ -47,6 +47,7 @@ export interface NtSeries {
   values?: NtDataPoint[];
   ohlc?: NtOHLCPoint[];
   color?: string;
+  y_axis?: "left" | "right"; // local ntcharts dual-Y support
 }
 
 export interface NtHeatCell { x: number; y: number; z: number; }
@@ -82,6 +83,7 @@ export interface NtSpec {
   height: number;
   x_axis?: NtXAxis;
   y_axis?: NtYAxis;
+  y2_axis?: NtYAxis; // optional independent right-hand Y axis
   data: NtData;
   heat?: NtHeatData;
   options?: NtOptions;

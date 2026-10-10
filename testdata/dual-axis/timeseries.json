@@ -1,0 +1,96 @@
+{
+  "type": "timeseries",
+  "title": "Load and temperature",
+  "width": 80,
+  "height": 24,
+  "x_axis": {
+    "type": "time",
+    "title": "Time"
+  },
+  "y_axis": {
+    "title": "Load",
+    "min": 0,
+    "max": 1,
+    "format": {
+      "kind": "percent",
+      "precision": 0
+    }
+  },
+  "y2_axis": {
+    "title": "Temperature",
+    "min": 5,
+    "max": 30,
+    "format": {
+      "kind": "number",
+      "precision": 0
+    }
+  },
+  "data": {
+    "series": [
+      {
+        "name": "Load",
+        "color": "#38bdf8",
+        "values": [
+          {
+            "x": "2026-10-01T00:00:00Z",
+            "y": 0.2
+          },
+          {
+            "x": "2026-10-02T00:00:00Z",
+            "y": 0.8
+          },
+          {
+            "x": "2026-10-03T00:00:00Z",
+            "y": 0.4
+          },
+          {
+            "x": "2026-10-04T00:00:00Z",
+            "y": 0.6
+          },
+          {
+            "x": "2026-10-05T00:00:00Z",
+            "y": 0.3
+          },
+          {
+            "x": "2026-10-06T00:00:00Z",
+            "y": 0.7
+          }
+        ]
+      },
+      {
+        "name": "Temperature",
+        "y_axis": "right",
+        "color": "#fb923c",
+        "values": [
+          {
+            "x": "2026-10-01T00:00:00Z",
+            "y": 10
+          },
+          {
+            "x": "2026-10-02T00:00:00Z",
+            "y": 15
+          },
+          {
+            "x": "2026-10-03T00:00:00Z",
+            "y": 25
+          },
+          {
+            "x": "2026-10-04T00:00:00Z",
+            "y": 20
+          },
+          {
+            "x": "2026-10-05T00:00:00Z",
+            "y": 12
+          },
+          {
+            "x": "2026-10-06T00:00:00Z",
+            "y": 22
+          }
+        ]
+      }
+    ]
+  },
+  "options": {
+    "show_legend": true
+  }
+}

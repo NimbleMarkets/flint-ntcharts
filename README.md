@@ -344,7 +344,7 @@ To develop against an unreleased `ntcharts`, add a local override without touchi
 go work init . ../ntcharts      # go.work is gitignored
 ```
 
-The local ntcharts dual-Y-axis work can be exercised with native spec inputs:
+The ntcharts dual-Y-axis support can be exercised with native spec inputs:
 
 ```sh
 go run ./cmd/flint-tui testdata/dual-axis/line.json
@@ -358,9 +358,8 @@ right. Edit the watched JSON or resize the terminal to test the renderer.
 `y2_axis` configures the independent right axis; a series selects it with
 `"y_axis": "right"`. The render checks cover raw specs and envelopes at three
 terminal sizes, including a narrow 44×15 window, and reject right-axis series
-without `y2_axis`. They skip on published ntcharts v2.7, which predates these
-fields; use the local workspace above to run them. The published dependency
-remains unchanged until the dual-axis release is available.
+without `y2_axis`. These checks run against the published ntcharts v2.8.0
+dependency; no local workspace is required.
 
 These are native ntcharts specs. The Flint compiler does not yet emit dual
 axes, and its raster toggle does not apply to native specs. As checked on

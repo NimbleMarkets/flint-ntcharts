@@ -4,21 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/NimbleMarkets/ntcharts/v2/spec"
 	"github.com/charmbracelet/x/ansi"
 )
 
-// v2.7 silently ignores the new JSON fields. Keep the published dependency
-// usable while exercising unreleased dual axes whenever the local workspace
-// selects an ntcharts revision that supports them.
 func TestRenderDualAxes(t *testing.T) {
-	if _, ok := reflect.TypeFor[spec.Spec]().FieldByName("Y2Axis"); !ok {
-		t.Skip("dual axes require local ntcharts: go work init . ../ntcharts")
-	}
 	for _, kind := range []string{"line", "scatter", "timeseries"} {
 		t.Run(kind, func(t *testing.T) {
 			raw, err := os.ReadFile("../testdata/dual-axis/" + kind + ".json")

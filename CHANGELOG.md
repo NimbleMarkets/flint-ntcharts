@@ -1,9 +1,11 @@
 # CHANGELOG
 
-## v0.3.1 (2026-10-05)
+## v0.3.1 (2026-10-10)
 
- * Requires ntcharts v2.7.0.
+ * Requires ntcharts v2.8.0 in both the main module and browser demo.
+ * Native ntcharts specs can render independent left and right Y axes on line, scatter and time-series charts using `y2_axis` and `"y_axis": "right"`. Includes examples and regression tests across terminal sizes. The Flint compiler does not yet emit dual-axis specs.
  * When `g` / `ctrl+g` cannot switch an image to Kitty graphics, the status line now gives ntcharts' reason (probe still pending, terminal not recognized, or probe unanswered), which names the `NTCHARTS_KITTY=supported` override. `FLINT_KITTY` still works as an alias and applies only when `NTCHARTS_KITTY` is not set.
+ * The browser demo uses booba-shim v0.4.0, which includes the raster-capable compiler bundle.
 
 ## v0.3.0 (2026-10-02)
 

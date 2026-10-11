@@ -27,10 +27,22 @@ jobs:
             go.sum
             demo/go.sum
       - uses: actions/setup-node@v7
-        with: { node-version: "24" }
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: js/package-lock.json
+      - name: Install compiler dependencies
+        working-directory: js
+        run: npm ci
+      - name: Build this revision's compiler shim
+        run: make browser-shim
       - name: Build the site
+        env:
+          FLINTCHART_SHIM: ../js/dist/flintchart-shim.mjs
         run: cd demo && go run ./cmd/site
       - name: Smoke test the built wasm
+        env:
+          FLINT_SMOKE_COMBO: "1"
         run: cd demo && node smoke.mjs
       - uses: actions/upload-pages-artifact@v5
         with:

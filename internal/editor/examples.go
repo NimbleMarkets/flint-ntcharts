@@ -160,4 +160,68 @@ var examples = []example{
     }
   }
 }`},
+	{name: "Combo Chart", src: `{
+  "data": {
+    "values": [
+      {
+        "month": "Jan",
+        "revenue": 120,
+        "margin": 0.2
+      },
+      {
+        "month": "Feb",
+        "revenue": 180,
+        "margin": 0.25
+      },
+      {
+        "month": "Mar",
+        "revenue": 150,
+        "margin": 0.22
+      },
+      {
+        "month": "Apr",
+        "revenue": 220,
+        "margin": 0.3
+      },
+      {
+        "month": "May",
+        "revenue": 190,
+        "margin": 0.26
+      },
+      {
+        "month": "Jun",
+        "revenue": 260,
+        "margin": 0.34
+      }
+    ]
+  },
+  "semantic_types": {
+    "revenue": {
+      "semanticType": "Amount",
+      "unit": "USD"
+    },
+    "margin": {
+      "semanticType": "Percentage",
+      "intrinsicDomain": [
+        0,
+        1
+      ]
+    }
+  },
+  "chart_spec": {
+    "chartType": "Combo Chart",
+    "title": "Revenue and margin",
+    "encodings": {
+      "x": {
+        "field": "month"
+      },
+      "y": {
+        "field": "revenue"
+      }
+    },
+    "chartProperties": {
+      "lineField": "margin"
+    }
+  }
+}`},
 }

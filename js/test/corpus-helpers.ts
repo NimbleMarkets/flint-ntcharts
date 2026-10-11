@@ -21,6 +21,7 @@ interface UpstreamCase {
   chartType: string;
   data: Record<string, unknown>[];
   encodingMap: Record<string, { fieldID: string } | undefined>;
+  chartProperties?: Record<string, any>;
   metadata: Record<string, { semanticType?: string } | undefined>;
 }
 
@@ -36,7 +37,7 @@ export function toAssemblyInput(c: UpstreamCase): ChartAssemblyInput {
   return {
     data: { values: c.data },
     semantic_types,
-    chart_spec: { chartType: c.chartType, encodings },
+    chart_spec: { chartType: c.chartType, encodings, ...(c.chartProperties ? { chartProperties: c.chartProperties } : {}) },
   };
 }
 
@@ -47,7 +48,7 @@ export function supportedCorpus(): CorpusCase[] {
   const generators = TEST_GENERATORS as Record<string, (() => UpstreamCase[]) | undefined>;
   const out: CorpusCase[] = [];
   for (const chartType of ntSupportedChartTypes()) {
-    const gen = generators[chartType];
+    const gen = generators[chartType === "Combo Chart" ? "Chart.js: Combo *" : chartType];
     if (!gen) continue;
     for (const c of gen()) {
       out.push({ id: `${chartType} :: ${c.title}`, chartType, input: toAssemblyInput(c) });

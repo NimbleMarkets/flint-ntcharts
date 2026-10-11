@@ -53,8 +53,8 @@ flint-chart:
 
 `cmd/flint-edit` (`go install …/cmd/flint-edit@latest`; also [in the browser](https://nimblemarkets.github.io/flint-ntcharts/); source in [`demo/`](demo/), `task site-serve` builds it locally; `task site-serve-dev` builds it with this tree's compiler instead of the one booba-shim ships, which is how to try raster charts in the browser before a booba-shim release carries them). In a terminal, `task demo` runs it and `task demo -- -example 8` starts on the raster chart is a split-pane playground: edit the
 JSON on the left, watch the chart on the right. `ctrl+n` steps through the built-in examples
-(bar, time series, candlestick, log scale, heatmap, histogram, calendar heatmap, grouped bars as a raster chart);
-`ctrl+1`‥`8` / `alt+1`‥`8` jump to one directly in terminals that deliver those chords. `flint-edit -example 8` starts on example 8. The lower-right corner shows which example is loaded and the kind of chart in the spec, e.g. `3/8 · Candlestick Chart`, with `(edited)` once the spec is changed. `ctrl+r` (or `alt+r`, in terminals that send Alt as Meta)
+(bar, time series, candlestick, log scale, heatmap, histogram, calendar heatmap, grouped bars as a raster chart, combo chart);
+`ctrl+1`‥`9` / `alt+1`‥`9` jump to one directly in terminals that deliver those chords. `flint-edit -example 8` starts on example 8. The lower-right corner shows which example is loaded and the kind of chart in the spec, e.g. `3/9 · Candlestick Chart`, with `(edited)` once the spec is changed. `ctrl+r` (or `alt+r`, in terminals that send Alt as Meta)
 flips the chart between the text and raster renderers, for the example on screen and without editing it; `ctrl+g` switches a
 raster chart between Kitty graphics and glyphs.
 
@@ -361,11 +361,46 @@ terminal sizes, including a narrow 44×15 window, and reject right-axis series
 without `y2_axis`. These checks run against the published ntcharts v2.8.0
 dependency; no local workspace is required.
 
-These are native ntcharts specs. The Flint compiler does not yet emit dual
-axes, and its raster toggle does not apply to native specs. As checked on
-2026-10-10, the latest published upstream Flint is still the pinned `0.5.1`;
-upstream `main` (`683d5de`) includes unreleased interaction and validation
-changes, but no shared dual-axis input contract for this backend.
+### Combo Chart
+
+The terminal compiler supports Flint's existing `"Combo Chart"` contract:
+`encodings.x` names the shared categories, `encodings.y` supplies bars on the
+left axis, and `chartProperties.lineField` selects a line on the right axis.
+When `lineField` is absent (or does not exist in the first row), Flint's
+numeric-field inference selects the first other mostly-numeric field. If
+there is none, the result is a plain bar chart.
+
+```json
+"chart_spec": {
+  "chartType": "Combo Chart",
+  "encodings": {"x": {"field": "month"}, "y": {"field": "revenue"}},
+  "chartProperties": {"lineField": "margin"}
+}
+```
+
+Duplicate categories are summed for each measure, matching Flint's Chart.js
+backend. Categories retain data order or semantic ordinal order. Missing line
+values leave gaps; missing bars keep their category slots. Each measure has
+its own formatting and range, and bar ranges include zero and negative values.
+The renderer draws the line over the bars.
+
+The initial terminal implementation supports vertical bars and linear axes.
+Facets and encoding-level aggregation are rejected; pre-aggregate input for
+reductions other than the default category sums. Rounded corners and log-scale
+requests produce warnings. Both Go modules pin the combo-capable ntcharts
+revision `v2.8.1-0.20261011222942-8a870be97d11`; no sibling checkout or local
+workspace override is required.
+
+```sh
+go run ./cmd/flint-edit -example 9
+go run ./cmd/flint-tui testdata/fixtures-terminal/combo.json
+```
+
+Example 9 is also available with Alt+9 or Ctrl+9. Use `task site-serve-dev`
+for a browser build with this compiler and a combo-capable ntcharts dependency.
+Flint's ECharts backend does not support Combo Chart yet, so selecting raster
+falls back to text with a warning. The native dual-axis examples above remain
+useful for testing the renderer independently of Flint.
 
 ## Phase 3: TypeScript → ntcharts-spec backend
 
@@ -395,6 +430,7 @@ order". Bumping it is a deliberate step: update the pin, run the suite, review w
 - Scatter Plot
 - Heatmap
 - Candlestick Chart
+- Combo Chart (categorical bars plus a right-axis line)
 - Sparkline
 - ECDF Plot (cumulative line; steps are drawn as a smooth rise)
 - Connected Scatter Plot (points joined in `order` channel order)

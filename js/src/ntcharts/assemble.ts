@@ -40,6 +40,7 @@ export interface NtInstantiateContext {
   chartType: string;
   emit: NtSpec;               // template fills this in
   warn: (w: ChartWarning) => void;
+  semanticTypes: ChartAssemblyInput["semantic_types"];
   ntFormatX?: NtFormat;       // pre-translated axis formats
   ntFormatY?: NtFormat;
 }
@@ -140,7 +141,7 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
   const ctx: NtInstantiateContext = {
     channelSemantics, layout, table: overflow.filteredData, encodings,
     chartProperties: input.chart_spec.chartProperties, canvasSize: baseSize,
-    chartType: template.chart, emit, warn, ntFormatX, ntFormatY,
+    chartType: template.chart, emit, warn, ntFormatX, ntFormatY, semanticTypes,
   };
   template.instantiate(emit as any, ctx as any);
   applyLogScale(emit, input.chart_spec.chartProperties, channelSemantics, warn);

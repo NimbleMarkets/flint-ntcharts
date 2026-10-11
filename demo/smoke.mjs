@@ -68,6 +68,18 @@ if (probe.echarts) {
   console.log("skip  raster example: the vendored shim bundle predates raster support");
 }
 
+const dualInput = readFileSync(new URL("../testdata/fixtures-terminal/combo.json", import.meta.url), "utf8");
+const dual = JSON.parse(globalThis.boobaShim.flintchart.compile(dualInput));
+if (dual.spec?.y2_axis) {
+  screen = "";
+  globalThis.bubbletea_write("\x1b9"); // Alt+9: combo example
+  await waitFor(/9\/9/, "combo example selected");
+  await waitFor(/35%/, "combo chart renders percentage ticks");
+} else {
+  if (process.env.FLINT_SMOKE_COMBO === "1") fail("bundle has no combo support");
+  console.log("skip  combo example: use task site-dev for the current compiler");
+}
+
 screen = "";
 globalThis.bubbletea_write("x");
 await waitFor(/invalid JSON/, "a bad edit reports invalid JSON on the status line");

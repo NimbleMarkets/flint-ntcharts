@@ -103,10 +103,10 @@ func TestExamplesCompile(t *testing.T) {
 	next, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 24})
 	m = next.(model)
 
-	if len(examples) != 8 {
-		t.Fatalf("expected 8 examples, got %d", len(examples))
+	if len(examples) != 9 {
+		t.Fatalf("expected 9 examples, got %d", len(examples))
 	}
-	for i, want := range []string{"Bar Chart", "Timeseries Line", "Candlestick", "Log Scale", "Heatmap", "Histogram", "Calendar Heatmap", "Grouped Bars (raster)"} {
+	for i, want := range []string{"Bar Chart", "Timeseries Line", "Candlestick", "Log Scale", "Heatmap", "Histogram", "Calendar Heatmap", "Grouped Bars (raster)", "Combo Chart"} {
 		if examples[i].name != want {
 			t.Fatalf("examples[%d].name = %q, want %q", i, examples[i].name, want)
 		}
@@ -164,12 +164,12 @@ func TestExampleSwitching(t *testing.T) {
 		t.Fatal("ctrl+3 did not switch to example 3 with a render")
 	}
 
-	// alt+9 → no example there; buffer untouched
+	// alt+0 → no example there; buffer untouched
 	before := m.src
-	next, _ = m.Update(tea.KeyPressMsg{Code: '9', Mod: tea.ModAlt})
+	next, _ = m.Update(tea.KeyPressMsg{Code: '0', Mod: tea.ModAlt})
 	m = next.(model)
 	if m.src != before {
-		t.Fatal("alt+9 must not change the buffer")
+		t.Fatal("alt+0 must not change the buffer")
 	}
 }
 
@@ -205,7 +205,7 @@ func TestNextExampleCycles(t *testing.T) {
 	m = next.(model)
 
 	ctrlN := tea.KeyPressMsg{Code: 'n', Mod: tea.ModCtrl}
-	for step, want := range []int{1, 2, 3, 4, 5, 6, 7, 0, 1} {
+	for step, want := range []int{1, 2, 3, 4, 5, 6, 7, 8, 0, 1} {
 		next, cmd := m.Update(ctrlN)
 		m = next.(model)
 		if m.src != examples[want].src {
@@ -390,7 +390,7 @@ func lastLine(v string) string {
 func TestCornerLabelNamesTheExampleAndChart(t *testing.T) {
 	m := sized(t)
 	last := ansi.Strip(lastLine(m.View().Content))
-	if !strings.HasSuffix(last, "1/8 · Bar Chart") {
+	if !strings.HasSuffix(last, "1/9 · Bar Chart") {
 		t.Fatalf("last line %q should end with the example number and chart", last)
 	}
 	if w := ansi.StringWidth(last); w != m.w {
@@ -399,13 +399,13 @@ func TestCornerLabelNamesTheExampleAndChart(t *testing.T) {
 
 	next, _ := m.Update(tea.KeyPressMsg{Code: 'n', Mod: tea.ModCtrl})
 	m = next.(model)
-	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "2/8 · Line Chart") {
+	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "2/9 · Line Chart") {
 		t.Fatalf("after ctrl+n the label is %q", last)
 	}
 
 	next, _ = m.Update(tea.KeyPressMsg{Code: '8', Mod: tea.ModAlt})
 	m = next.(model)
-	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "8/8 · Grouped Bar Chart") {
+	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "8/9 · Grouped Bar Chart") {
 		t.Fatalf("on the raster example the label is %q", last)
 	}
 }
@@ -414,7 +414,7 @@ func TestCornerLabelFollowsTheEditedSpec(t *testing.T) {
 	m := sized(t)
 	m.src = strings.Replace(examples[0].src, `"Bar Chart"`, `"Scatter Plot"`, 1)
 	last := ansi.Strip(lastLine(m.View().Content))
-	if !strings.HasSuffix(last, "1/8 (edited) · Scatter Plot") {
+	if !strings.HasSuffix(last, "1/9 (edited) · Scatter Plot") {
 		t.Fatalf("label %q should show the edit and the chart now in the spec", last)
 	}
 }
@@ -423,7 +423,7 @@ func TestCornerLabelSurvivesALongStatusMessage(t *testing.T) {
 	m := sized(t)
 	m.msg = strings.Repeat("a very long status message ", 20)
 	last := ansi.Strip(lastLine(m.View().Content))
-	if !strings.HasSuffix(last, "1/8 · Bar Chart") || ansi.StringWidth(last) != m.w {
+	if !strings.HasSuffix(last, "1/9 · Bar Chart") || ansi.StringWidth(last) != m.w {
 		t.Fatalf("label lost or row mis-sized: %q (%d cols)", last, ansi.StringWidth(last))
 	}
 }
@@ -441,5 +441,24 @@ func TestChartKind(t *testing.T) {
 		if got := chartKind(in); got != want {
 			t.Errorf("chartKind(%s) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+// Switching the combo example to raster must preserve both series by
+// falling back to text, since upstream ECharts does not support Combo Chart.
+func TestComboExampleRasterFallback(t *testing.T) {
+	m := sized(t)
+	m.loadExample(8)
+	m = renderNow(t, m)
+	if m.state != 1 {
+		t.Fatalf("combo example: %s", m.msg)
+	}
+	next, _ := m.Update(tea.KeyPressMsg{Code: 'r', Mod: tea.ModCtrl})
+	m = renderNow(t, next.(model))
+	if m.state != 2 || !strings.Contains(m.msg, "Combo Chart") {
+		t.Fatalf("expected explained text fallback, state=%d msg=%q", m.state, m.msg)
+	}
+	if strings.TrimSpace(m.pane.View()) == "" {
+		t.Fatal("empty fallback chart")
 	}
 }

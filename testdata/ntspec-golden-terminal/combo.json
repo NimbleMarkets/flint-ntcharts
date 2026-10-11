@@ -1,0 +1,105 @@
+{
+  "type": "bar",
+  "width": 64,
+  "height": 20,
+  "data": {
+    "series": [
+      {
+        "name": "revenue",
+        "type": "bar",
+        "values": [
+          {
+            "x": "Jan",
+            "y": 120
+          },
+          {
+            "x": "Feb",
+            "y": 180
+          },
+          {
+            "x": "Mar",
+            "y": 150
+          },
+          {
+            "x": "Apr",
+            "y": 220
+          },
+          {
+            "x": "May",
+            "y": 190
+          },
+          {
+            "x": "Jun",
+            "y": 260
+          }
+        ]
+      },
+      {
+        "name": "margin",
+        "type": "line",
+        "y_axis": "right",
+        "values": [
+          {
+            "x": "Jan",
+            "y": 0.2
+          },
+          {
+            "x": "Feb",
+            "y": 0.25
+          },
+          {
+            "x": "Mar",
+            "y": 0.22
+          },
+          {
+            "x": "Apr",
+            "y": 0.3
+          },
+          {
+            "x": "May",
+            "y": 0.26
+          },
+          {
+            "x": "Jun",
+            "y": 0.34
+          }
+        ]
+      }
+    ]
+  },
+  "title": "Revenue and margin",
+  "x_axis": {
+    "type": "category",
+    "title": "month",
+    "labels": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun"
+    ]
+  },
+  "y_axis": {
+    "title": "revenue",
+    "format": {
+      "kind": "currency",
+      "currency": "$",
+      "precision": 2
+    }
+  },
+  "y2_axis": {
+    "title": "margin",
+    "format": {
+      "kind": "percent",
+      "precision": 0
+    },
+    "min": 0.193,
+    "max": 0.34700000000000003
+  },
+  "options": {
+    "show_legend": true
+  },
+  "_width": 64,
+  "_height": 20
+}

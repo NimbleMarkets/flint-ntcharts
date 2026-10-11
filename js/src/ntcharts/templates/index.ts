@@ -1,3 +1,4 @@
+import { ntComboChartDef } from "./combo.js";
 import type { ChartTemplateDef } from "flint-chart/core";
 import { ntBarChartDef } from "./bar.js";
 import { ntStackedBarChartDef } from "./stacked-bar.js";
@@ -37,3 +38,5 @@ ntRegister(ntHistogramDef);
 ntRegister(ntAreaChartDef);
 ntRegister(ntLollipopChartDef);
 ntRegister(ntCalendarHeatmapDef);
+
+ntRegister(ntComboChartDef);

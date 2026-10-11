@@ -300,7 +300,7 @@ func (m model) statusLine() string {
 	return style.Render(msg) + strings.Repeat(" ", gap) + hintStyle.Render(label)
 }
 
-// cornerLabel is "3/8 · Candlestick Chart": the example loaded last and the
+// cornerLabel is "3/9 · Candlestick Chart": the example loaded last and the
 // chart type in the spec now, so it follows edits. "(edited)" marks a spec that
 // no longer matches the example it started as.
 func (m model) cornerLabel() string {

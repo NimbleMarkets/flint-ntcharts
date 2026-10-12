@@ -402,6 +402,41 @@ Flint's ECharts backend does not support Combo Chart yet, so selecting raster
 falls back to text with a warning. The native dual-axis examples above remain
 useful for testing the renderer independently of Flint.
 
+### Categorical line and scatter axes (local development)
+
+Line Chart and Scatter Plot now retain nominal/ordinal X values as string
+categories and emit ordered `x_axis.labels`. Numeric and temporal charts use
+their existing paths. The local ntcharts categorical builder preserves empty
+slots, breaks lines across missing categories, and allows repeated scatter
+observations. Explicit native labels define order; otherwise native specs derive
+it from shared X data or first appearance. Flint respects semantic category order.
+
+This work currently requires the sibling ntcharts checkout and the local
+`go.work` override above; it is newer than the pinned combo revision. The
+categorical builder returns `*spec.CategoricalModel`, which embeds
+`linechart.Model` and redraws on resize. Numeric line/scatter return types are
+unchanged. Categorical X cannot be logarithmic; Y and right Y may be.
+
+```sh
+go run ./cmd/flint-tui testdata/fixtures-terminal/line-categorical.json
+go run ./cmd/flint-tui testdata/fixtures-terminal/scatter-categorical.json
+go run ./cmd/flint-tui testdata/fixtures-terminal/slope.json
+go run ./cmd/flint-tui testdata/fixtures-terminal/strip.json
+go run ./cmd/flint-tui testdata/fixtures-terminal/strip-dense.json
+```
+
+Slope Chart treats exactly two periods as categories, orders numeric/date periods
+naturally, groups by color or detail, and fits the Y range by default. Endpoint
+value labels are omitted with a warning unless `showText: false` is requested.
+The dense Strip example has 120 observations across three groups, overlapping
+score ranges, and repeated values. Coincident observations share a terminal dot;
+the example makes that limitation visible when evaluating jitter.
+
+Strip Plot draws aligned observations at category centers; jitter and point-size
+rendering remain unsupported and are reported. Faceted categorical inputs use
+separate series on a single plot with a warning. Duplicate line observations
+within a series/category require pre-aggregation; they are not silently collapsed.
+
 ## Phase 3: TypeScript → ntcharts-spec backend
 
 Phase 3 adds a second, pure-TypeScript compile path that runs `flint-chart`'s core assembly
@@ -428,6 +463,8 @@ order". Bumping it is a deliberate step: update the pin, run the suite, review w
 - Stacked Bar Chart
 - Line Chart
 - Scatter Plot
+- Slope Chart (two categorical periods; endpoint value labels omitted)
+- Strip Plot (aligned points; jitter omitted)
 - Heatmap
 - Candlestick Chart
 - Combo Chart (categorical bars plus a right-axis line)

@@ -1,0 +1,46 @@
+{
+  "type": "scatter",
+  "width": 64,
+  "height": 20,
+  "data": {
+    "series": [
+      {
+        "name": "value",
+        "values": [
+          {
+            "x": "B",
+            "y": 4
+          },
+          {
+            "x": "A",
+            "y": 7
+          },
+          {
+            "x": "B",
+            "y": 8
+          },
+          {
+            "x": "C",
+            "y": 2
+          }
+        ]
+      }
+    ]
+  },
+  "x_axis": {
+    "type": "category",
+    "title": "group",
+    "labels": [
+      "B",
+      "A",
+      "C"
+    ]
+  },
+  "y_axis": {
+    "title": "value",
+    "min": 1.7,
+    "max": 8.3
+  },
+  "_width": 64,
+  "_height": 20
+}

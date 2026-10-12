@@ -1,0 +1,55 @@
+{
+  "type": "line",
+  "width": 64,
+  "height": 20,
+  "data": {
+    "series": [
+      {
+        "name": "A",
+        "values": [
+          {
+            "x": "2020",
+            "y": 10
+          },
+          {
+            "x": "2025",
+            "y": 30
+          }
+        ],
+        "color": "#4e79a7"
+      },
+      {
+        "name": "B",
+        "values": [
+          {
+            "x": "2020",
+            "y": 25
+          },
+          {
+            "x": "2025",
+            "y": 15
+          }
+        ],
+        "color": "#f28e2c"
+      }
+    ]
+  },
+  "x_axis": {
+    "type": "category",
+    "title": "year",
+    "labels": [
+      "2020",
+      "2025"
+    ]
+  },
+  "y_axis": {
+    "title": "score",
+    "min": 9,
+    "max": 31
+  },
+  "options": {
+    "show_legend": true
+  },
+  "_width": 64,
+  "_height": 20
+}

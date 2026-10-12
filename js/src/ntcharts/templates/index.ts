@@ -1,3 +1,5 @@
+import { ntSlopeChartDef } from "./slope.js";
+import { ntStripPlotDef } from "./strip.js";
 import { ntComboChartDef } from "./combo.js";
 import type { ChartTemplateDef } from "flint-chart/core";
 import { ntBarChartDef } from "./bar.js";
@@ -40,3 +42,6 @@ ntRegister(ntLollipopChartDef);
 ntRegister(ntCalendarHeatmapDef);
 
 ntRegister(ntComboChartDef);
+
+ntRegister(ntSlopeChartDef);
+ntRegister(ntStripPlotDef);

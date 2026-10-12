@@ -1,3 +1,4 @@
+import { isCategorical, finishCategorical, categorySeries } from "../category.js";
 import type { ChartTemplateDef } from "flint-chart/core";
 import { makeCartesianPivot, makeSortAction } from "flint-chart/core";
 import { splitSeries } from "../series.js";
@@ -19,6 +20,11 @@ export const ntScatterPlotDef: ChartTemplateDef = {
     if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
     if (cs.y?.zero?.zero) emit.y_axis.min = 0;
     else pinFittedYDomain(emit, cs, table);
+
+    if (isCategorical(ctx)) {
+      finishCategorical(ctx, categorySeries(ctx), false);
+      return;
+    }
 
     const sizeField = cs.size?.field;
     emit.data.series = splitSeries(table, cs, (row) => {

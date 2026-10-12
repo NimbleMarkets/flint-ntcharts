@@ -1,0 +1,43 @@
+{
+  "data": {
+    "values": [
+      {
+        "year": 2025,
+        "score": 30,
+        "team": "A"
+      },
+      {
+        "year": 2020,
+        "score": 10,
+        "team": "A"
+      },
+      {
+        "year": 2025,
+        "score": 15,
+        "team": "B"
+      },
+      {
+        "year": 2020,
+        "score": 25,
+        "team": "B"
+      }
+    ]
+  },
+  "chart_spec": {
+    "chartType": "Slope Chart",
+    "encodings": {
+      "x": {
+        "field": "year"
+      },
+      "y": {
+        "field": "score"
+      },
+      "color": {
+        "field": "team"
+      }
+    },
+    "chartProperties": {
+      "showText": false
+    }
+  }
+}

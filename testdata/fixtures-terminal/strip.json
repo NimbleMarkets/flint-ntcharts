@@ -1,0 +1,36 @@
+{
+  "data": {
+    "values": [
+      {
+        "group": "Control",
+        "score": 10
+      },
+      {
+        "group": "Control",
+        "score": 15
+      },
+      {
+        "group": "Treatment",
+        "score": 20
+      },
+      {
+        "group": "Treatment",
+        "score": 25
+      }
+    ]
+  },
+  "chart_spec": {
+    "chartType": "Strip Plot",
+    "encodings": {
+      "x": {
+        "field": "group"
+      },
+      "y": {
+        "field": "score"
+      }
+    },
+    "chartProperties": {
+      "jitterWidth": 0
+    }
+  }
+}

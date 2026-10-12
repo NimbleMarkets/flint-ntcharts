@@ -18,7 +18,7 @@ describe("upstream test-data corpus", () => {
     // Bubble Chart is registered but upstream has no test generator for it;
     // templates-group1.test.ts covers it by hand.
     expect([...types].sort()).toEqual(
-      ["Area Chart", "Bar Chart", "Calendar Heatmap", "Candlestick Chart", "Combo Chart", "Connected Scatter Plot", "ECDF Plot", "Heatmap", "Histogram", "Line Chart", "Lollipop Chart", "Scatter Plot", "Sparkline", "Stacked Bar Chart"],
+      ["Area Chart", "Bar Chart", "Calendar Heatmap", "Candlestick Chart", "Combo Chart", "Connected Scatter Plot", "ECDF Plot", "Heatmap", "Histogram", "Line Chart", "Lollipop Chart", "Scatter Plot", "Slope Chart", "Sparkline", "Stacked Bar Chart", "Strip Plot"],
     );
     expect(corpus.length).toBeGreaterThan(50);
   });

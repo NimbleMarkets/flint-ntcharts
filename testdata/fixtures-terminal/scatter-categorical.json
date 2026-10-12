@@ -1,0 +1,34 @@
+{
+  "data": {
+    "values": [
+      {
+        "group": "B",
+        "value": 4
+      },
+      {
+        "group": "A",
+        "value": 7
+      },
+      {
+        "group": "B",
+        "value": 8
+      },
+      {
+        "group": "C",
+        "value": 2
+      }
+    ]
+  },
+  "chart_spec": {
+    "chartType": "Scatter Plot",
+    "encodings": {
+      "x": {
+        "field": "group",
+        "type": "nominal"
+      },
+      "y": {
+        "field": "value"
+      }
+    }
+  }
+}

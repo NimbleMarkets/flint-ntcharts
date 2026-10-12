@@ -1,0 +1,45 @@
+{
+  "type": "scatter",
+  "width": 64,
+  "height": 20,
+  "data": {
+    "series": [
+      {
+        "name": "score",
+        "values": [
+          {
+            "x": "Control",
+            "y": 10
+          },
+          {
+            "x": "Control",
+            "y": 15
+          },
+          {
+            "x": "Treatment",
+            "y": 20
+          },
+          {
+            "x": "Treatment",
+            "y": 25
+          }
+        ]
+      }
+    ]
+  },
+  "x_axis": {
+    "type": "category",
+    "title": "group",
+    "labels": [
+      "Control",
+      "Treatment"
+    ]
+  },
+  "y_axis": {
+    "title": "score",
+    "min": 9.25,
+    "max": 25.75
+  },
+  "_width": 64,
+  "_height": 20
+}

@@ -1,0 +1,45 @@
+{
+  "type": "line",
+  "width": 64,
+  "height": 20,
+  "data": {
+    "series": [
+      {
+        "name": "score",
+        "values": [
+          {
+            "x": "Start",
+            "y": 10
+          },
+          {
+            "x": "Finish",
+            "y": 30
+          }
+        ]
+      }
+    ]
+  },
+  "x_axis": {
+    "type": "category",
+    "title": "stage",
+    "labels": [
+      "Start",
+      "Gap",
+      "Finish"
+    ]
+  },
+  "y_axis": {
+    "title": "score",
+    "min": 9,
+    "max": 31
+  },
+  "_warnings": [
+    {
+      "severity": "warning",
+      "code": "invalid-category-point",
+      "message": "omitted 1 point(s) with missing category or nonfinite measure"
+    }
+  ],
+  "_width": 64,
+  "_height": 20
+}

@@ -1,0 +1,30 @@
+{
+  "data": {
+    "values": [
+      {
+        "stage": "Start",
+        "score": 10
+      },
+      {
+        "stage": "Gap",
+        "score": null
+      },
+      {
+        "stage": "Finish",
+        "score": 30
+      }
+    ]
+  },
+  "chart_spec": {
+    "chartType": "Line Chart",
+    "encodings": {
+      "x": {
+        "field": "stage",
+        "type": "nominal"
+      },
+      "y": {
+        "field": "score"
+      }
+    }
+  }
+}

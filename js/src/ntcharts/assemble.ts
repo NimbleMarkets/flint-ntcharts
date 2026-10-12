@@ -244,6 +244,7 @@ function applyLogScale(
 function logScaleBlocker(emit: NtSpec, axis: "x" | "y"): string | undefined {
   const drawsLogY = ["line", "scatter", "timeseries", "ohlc"];
   const drawsLogX = ["line", "scatter"];
+  if (axis === "x" && emit.x_axis?.type === "category") return "its X axis is categorical";
   if (!(axis === "y" ? drawsLogY : drawsLogX).includes(emit.type)) {
     if (axis === "x" && drawsLogY.includes(emit.type)) return "its X axis is time";
     return `a terminal ${emit.type} chart cannot draw a logarithmic axis`;

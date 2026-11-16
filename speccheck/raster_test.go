@@ -22,12 +22,11 @@ func TestRasterRendererEndToEnd(t *testing.T) {
 	}
 	defer r.Close(ctx)
 
-	grouped := `{"data":{"values":[
-		{"c":"Laptop","n":3,"g":"USA"},{"c":"Phone","n":5,"g":"USA"},{"c":"Laptop","n":2,"g":"China"},{"c":"Phone","n":4,"g":"China"}]},
-		"chart_spec":{"chartType":"Grouped Bar Chart","encodings":{"x":{"field":"c"},"y":{"field":"n"},"group":{"field":"g"}}}}`
+	pie := `{"data":{"values":[{"c":"Laptop","n":3},{"c":"Phone","n":5},{"c":"Tablet","n":2}]},
+		"chart_spec":{"chartType":"Pie Chart","encodings":{"color":{"field":"c"},"size":{"field":"n"}}}}`
 
-	t.Run("a grouped bar chart, which text cannot draw, draws as an image", func(t *testing.T) {
-		res, err := r.CompileResult(ctx, []byte(grouped), envelope.WithRenderer("raster"), envelope.WithBaseSize(80, 24))
+	t.Run("a pie chart, which text cannot draw, draws as an image", func(t *testing.T) {
+		res, err := r.CompileResult(ctx, []byte(pie), envelope.WithRenderer("raster"), envelope.WithBaseSize(80, 24))
 		if err != nil {
 			t.Fatalf("CompileResult: %v", err)
 		}
@@ -47,14 +46,14 @@ func TestRasterRendererEndToEnd(t *testing.T) {
 	})
 
 	t.Run("the same chart without a renderer is an error that points at raster", func(t *testing.T) {
-		_, _, err := r.Compile(ctx, []byte(grouped))
+		_, _, err := r.Compile(ctx, []byte(pie))
 		if err == nil || !strings.Contains(err.Error(), `"renderer": "raster"`) {
 			t.Fatalf("err = %v", err)
 		}
 	})
 
 	t.Run("Compile rejects a raster envelope instead of returning an empty spec", func(t *testing.T) {
-		_, _, err := r.Compile(ctx, []byte(grouped), envelope.WithRenderer("raster"))
+		_, _, err := r.Compile(ctx, []byte(pie), envelope.WithRenderer("raster"))
 		if err == nil || !strings.Contains(err.Error(), "ParseResult") {
 			t.Fatalf("err = %v", err)
 		}

@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## Unreleased
+
+ * Requires flint-chart 1.1.0 and ntcharts v2.9.0 (both Go modules). The categorical line and scatter builder no longer needs a local ntcharts checkout.
+ * Bars follow flint 1.1's banded axes: dates and numbers along the category axis are laid out as bands, in time order, named as briefly as their values allow (`2021`, `2021-03`, `2021-03-14`), and limited to what the width draws with an `overflow` warning.
+ * Several rows on one bar combine by the measure's rule (sum, or average for intensive measures and `Number`) with a `rows-combined` warning, instead of the last row winning. A facet on a bar chart is merged into each bar with a `facets-merged` warning.
+ * Bars below zero are drawn: the value axis is no longer pinned at 0 when values go negative.
+ * Names too wide for their bars are shortened rather than cut (`'21`, `Mar`, `03`; a number that does not fit is left out), with a `labels-shortened` warning giving the axis range. Histogram bins are named by their starts with fewer figures where needed.
+ * Scatter plots draw a categorical y beside a measured x transposed (`axes-transposed`), and dates along x on a time axis (they were dropped as NaN). Flattened facets get distinct colours.
+ * Sparklines spread over the chart's width; several sparklines are drawn as one line chart (`chart-type-approximated`).
+ * A numeric line chart whose data sits far from 0 says so (`x-axis-from-zero`): the terminal's line X axis always reaches 0.
+ * **Behavior change:** some requests are declined with an error naming the fields instead of drawing an empty or merged chart: bars with no quantitative axis, a line chart whose y is not a measure, a scatter plot on two categorical axes, and a faceted candlestick chart.
+ * New chart types from flint 1.1: Grouped Bar Chart (bar by bar, following flint's dodge plan), Pyramid Chart, Density Plot (flint's KDE), Range Area Chart (both edges), Streamgraph and Ranged Dot Plot (approximated), and Regression (flint's six fit methods, the fit drawn as a row of points). Charts that are approximated say so in an `info` warning. Pie, donut, rose, radar, funnel, treemap, sunburst, sankey, network, tree, parallel coordinates, gauge, bullet, boxplot, violin, waterfall, Gantt, bump, KPI and map charts remain raster-only or unsupported.
+ * A line (and area, streamgraph or sparkline drawn as lines) whose dates run at a regular cadence with no gaps, with room for every label, is drawn on date slots in flint's date format, so each label sits under its point. ntcharts' time axis labels a fixed 4-column step, which put `Feb` up to three columns past Feb 1.
+ * Raster: charts on a numeric or time X axis (line, scatter, density, ECDF, regression) keep their X; go-analyze had drawn each series' X values in data order. Range areas draw their low and high edges, streamgraphs draw one line per stream, points against a category Y axis and connected-scatter paths return `raster.ErrUnsupported`, so viewers fall back to text, legends are drawn as a row at the top (go-analyze had drawn flint's right-hand legend over the Y axis labels), and value axes that should include zero start at 0 (go-analyze had started a bar chart above its shortest bar).
+ * flint-edit gains five examples: Grouped Bars, Pyramid, Density Plot, Range Area and Regression (14 in all). Examples may now carry `info` notes.
+ * Raster: fractional sizes in flint 1.1's ECharts options (font sizes in compact charts) are rounded, so those charts render instead of failing to parse.
+
 ## v0.3.1 (2026-10-10)
 
  * Requires ntcharts v2.8.0 in both the main module and browser demo.

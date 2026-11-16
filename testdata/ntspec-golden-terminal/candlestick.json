@@ -60,6 +60,9 @@
       "#ef5350"
     ]
   },
+  "options": {
+    "nice_ticks": true
+  },
   "_width": 64,
   "_height": 20
 }

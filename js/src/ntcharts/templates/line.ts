@@ -1,10 +1,11 @@
-import { isCategorical, finishCategorical, categorySeries } from "../category.js";
+import { isCategorical, finishCategorical, categorySeries, Y_LABEL_ROOM } from "../category.js";
 import type { ChartTemplateDef } from "flint-chart/core";
 import { makeCartesianPivot, makeSortAction } from "flint-chart/core";
 import { splitSeries } from "../series.js";
 import { toMs } from "../temporal.js";
 import type { NtInstantiateContext } from "../assemble.js";
-import { pinFittedYDomain } from "../domain.js";
+import { pinFittedYDomain, pinZeroBaseline } from "../domain.js";
+import { regularDates } from "../cadence.js";
 
 export const ntLineChartDef: ChartTemplateDef = {
   chart: "Line Chart",
@@ -12,15 +13,36 @@ export const ntLineChartDef: ChartTemplateDef = {
   channels: ["x", "y", "color", "group"],
   markCognitiveChannel: "position",
   instantiate: (_spec: any, rawCtx: any) => {
-    const ctx = rawCtx as NtInstantiateContext;
+    let ctx = rawCtx as NtInstantiateContext;
+    // Dates at a regular cadence, with at least two columns each, are drawn
+    // on category slots, each point over its date; the axis names them in
+    // the fewest characters that fit (see ticks.ts). ntcharts' time axis
+    // instead labels a fixed 4-column step, a few columns off each date.
+    const x0 = ctx.channelSemantics.x;
+    if (x0?.type === "temporal") {
+      const values = ctx.table.map((r) => r[x0.field]);
+      const dates = values.every((v) => v == null || Number.isFinite(toMs(v))) ? regularDates(values.filter((v) => v != null)) : undefined;
+      if (dates && dates.length <= Math.floor((ctx.emit.width - Y_LABEL_ROOM) / 2)) {
+        const key = (v: unknown) => {
+          const iso = new Date(toMs(v)).toISOString();
+          return iso.endsWith("T00:00:00.000Z") ? iso.slice(0, 10) : iso.slice(0, 16);
+        };
+        const table = ctx.table.map((r) => (r[x0.field] == null ? r : { ...r, [x0.field]: key(r[x0.field]) }));
+        ctx = { ...ctx, table, channelSemantics: { ...ctx.channelSemantics, x: { ...x0, type: "ordinal", ordinalSortOrder: dates.map(key) } } };
+      }
+    }
     const { emit, channelSemantics: cs, table } = ctx;
+    if (cs.y?.type !== "quantitative") {
+      throw new Error(`A terminal ${ctx.chartType} measures along y; got y = ${cs.y ? `${cs.y.field} (${cs.y.type})` : "none"}. ` +
+        `Put the measure on y and the ${cs.y?.field ?? "category"} on x.`);
+    }
     const temporal = cs.x?.type === "temporal";
     emit.type = temporal ? "timeseries" : "line";
     emit.x_axis = { ...emit.x_axis, type: temporal ? "time" : "value", title: cs.x?.field };
     emit.y_axis = { ...emit.y_axis, title: cs.y?.field };
     if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
     if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
-    if (cs.y?.zero?.zero) emit.y_axis.min = 0;
+    if (cs.y?.zero?.zero) pinZeroBaseline(emit, cs, table);
     else pinFittedYDomain(emit, cs, table);
 
     if (isCategorical(ctx)) {

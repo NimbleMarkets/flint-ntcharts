@@ -90,7 +90,8 @@
     "max": 0.34700000000000003
   },
   "options": {
-    "show_legend": true
+    "show_legend": true,
+    "nice_ticks": true
   },
   "_width": 64,
   "_height": 20

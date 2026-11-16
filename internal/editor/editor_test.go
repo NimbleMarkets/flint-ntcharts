@@ -2,6 +2,7 @@ package editor
 
 import (
 	"context"
+	"fmt"
 	"image"
 	"strings"
 	"testing"
@@ -103,10 +104,14 @@ func TestExamplesCompile(t *testing.T) {
 	next, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 24})
 	m = next.(model)
 
-	if len(examples) != 9 {
-		t.Fatalf("expected 9 examples, got %d", len(examples))
+	names := []string{"Bar Chart", "Timeseries Line", "Candlestick", "Log Scale", "Heatmap", "Histogram", "Calendar Heatmap", "Pie Chart (raster)", "Combo Chart",
+		"Grouped Bars", "Pyramid", "Density Plot", "Range Area", "Regression",
+		"Stacked Bars", "Long Names", "Net Cash Flow", "Hourly Traffic", "Scatter Groups", "Theme (Economist)", "Streamgraph", "Slope Chart",
+		"Strip Plot", "ECDF", "Lollipop", "Sparklines", "Connected Scatter", "Ranged Dots", "Area Chart", "Diverging Heatmap"}
+	if len(examples) != len(names) {
+		t.Fatalf("expected %d examples, got %d", len(names), len(examples))
 	}
-	for i, want := range []string{"Bar Chart", "Timeseries Line", "Candlestick", "Log Scale", "Heatmap", "Histogram", "Calendar Heatmap", "Grouped Bars (raster)", "Combo Chart"} {
+	for i, want := range names {
 		if examples[i].name != want {
 			t.Fatalf("examples[%d].name = %q, want %q", i, examples[i].name, want)
 		}
@@ -118,8 +123,20 @@ func TestExamplesCompile(t *testing.T) {
 		m.src = ex.src
 		m.gen++
 		m = renderNow(t, m)
-		if m.state != 1 {
-			t.Fatalf("example %d (%s): state %d, msg %q — want clean compile",
+		// An example may carry info notes (a chart the terminal approximates
+		// says so), never a warning about its data or spec.
+		if m.state == 2 {
+			_, warns, err := tui.Render(m.runner, []byte(ex.src), 80, 20)
+			if err != nil {
+				t.Fatalf("example %d (%s): %v", i+1, ex.name, err)
+			}
+			for _, w := range warns {
+				if w.Severity != "info" {
+					t.Fatalf("example %d (%s): %s warning %s: %s", i+1, ex.name, w.Severity, w.Code, w.Message)
+				}
+			}
+		} else if m.state != 1 {
+			t.Fatalf("example %d (%s): state %d, msg %q — want a clean compile",
 				i+1, ex.name, m.state, m.msg)
 		}
 		if strings.TrimSpace(m.pane.View()) == "" {
@@ -205,7 +222,11 @@ func TestNextExampleCycles(t *testing.T) {
 	m = next.(model)
 
 	ctrlN := tea.KeyPressMsg{Code: 'n', Mod: tea.ModCtrl}
-	for step, want := range []int{1, 2, 3, 4, 5, 6, 7, 8, 0, 1} {
+	var order []int
+	for i := 1; i <= len(examples); i++ {
+		order = append(order, i%len(examples))
+	}
+	for step, want := range append(order, 1) {
 		next, cmd := m.Update(ctrlN)
 		m = next.(model)
 		if m.src != examples[want].src {
@@ -219,18 +240,17 @@ func TestNextExampleCycles(t *testing.T) {
 		}
 	}
 
-	// A direct jump resets where ctrl+n continues from: after jumping to the
-	// last example, ctrl+n wraps to the first.
-	last := len(examples)
-	next, _ = m.Update(tea.KeyPressMsg{Code: rune('0' + last), Mod: tea.ModAlt})
+	// A direct jump resets where ctrl+n continues from: after jumping to
+	// example 9 (the last digit chord), ctrl+n goes on to example 10.
+	next, _ = m.Update(tea.KeyPressMsg{Code: '9', Mod: tea.ModAlt})
 	m = next.(model)
-	if m.src != examples[last-1].src {
-		t.Fatalf("alt+%d did not load the last example", last)
+	if m.src != examples[8].src {
+		t.Fatal("alt+9 did not load example 9")
 	}
 	next, _ = m.Update(ctrlN)
 	m = next.(model)
-	if m.src != examples[0].src {
-		t.Fatal("ctrl+n after the last example should wrap to example 1")
+	if m.src != examples[9].src {
+		t.Fatal("ctrl+n after example 9 should load example 10")
 	}
 }
 
@@ -351,7 +371,7 @@ func TestAltRIsAnAliasForCtrlR(t *testing.T) {
 	}
 }
 
-// Example 8 (grouped bars) is raster-only. Toggling to text must keep the image
+// Example 8 (a pie chart) is raster-only. Toggling to text must keep the image
 // on screen and say why, not blank the chart.
 func TestCtrlROnARasterOnlyChartKeepsTheImage(t *testing.T) {
 	m := sized(t)
@@ -390,7 +410,7 @@ func lastLine(v string) string {
 func TestCornerLabelNamesTheExampleAndChart(t *testing.T) {
 	m := sized(t)
 	last := ansi.Strip(lastLine(m.View().Content))
-	if !strings.HasSuffix(last, "1/9 · Bar Chart") {
+	if !strings.HasSuffix(last, fmt.Sprintf("1/%d · Bar Chart", len(examples))) {
 		t.Fatalf("last line %q should end with the example number and chart", last)
 	}
 	if w := ansi.StringWidth(last); w != m.w {
@@ -399,13 +419,13 @@ func TestCornerLabelNamesTheExampleAndChart(t *testing.T) {
 
 	next, _ := m.Update(tea.KeyPressMsg{Code: 'n', Mod: tea.ModCtrl})
 	m = next.(model)
-	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "2/9 · Line Chart") {
+	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, fmt.Sprintf("2/%d · Line Chart", len(examples))) {
 		t.Fatalf("after ctrl+n the label is %q", last)
 	}
 
 	next, _ = m.Update(tea.KeyPressMsg{Code: '8', Mod: tea.ModAlt})
 	m = next.(model)
-	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "8/9 · Grouped Bar Chart") {
+	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, fmt.Sprintf("8/%d · Pie Chart", len(examples))) {
 		t.Fatalf("on the raster example the label is %q", last)
 	}
 }
@@ -414,7 +434,7 @@ func TestCornerLabelFollowsTheEditedSpec(t *testing.T) {
 	m := sized(t)
 	m.src = strings.Replace(examples[0].src, `"Bar Chart"`, `"Scatter Plot"`, 1)
 	last := ansi.Strip(lastLine(m.View().Content))
-	if !strings.HasSuffix(last, "1/9 (edited) · Scatter Plot") {
+	if !strings.HasSuffix(last, fmt.Sprintf("1/%d (edited) · Scatter Plot", len(examples))) {
 		t.Fatalf("label %q should show the edit and the chart now in the spec", last)
 	}
 }
@@ -423,7 +443,7 @@ func TestCornerLabelSurvivesALongStatusMessage(t *testing.T) {
 	m := sized(t)
 	m.msg = strings.Repeat("a very long status message ", 20)
 	last := ansi.Strip(lastLine(m.View().Content))
-	if !strings.HasSuffix(last, "1/9 · Bar Chart") || ansi.StringWidth(last) != m.w {
+	if !strings.HasSuffix(last, fmt.Sprintf("1/%d · Bar Chart", len(examples))) || ansi.StringWidth(last) != m.w {
 		t.Fatalf("label lost or row mis-sized: %q (%d cols)", last, ansi.StringWidth(last))
 	}
 }

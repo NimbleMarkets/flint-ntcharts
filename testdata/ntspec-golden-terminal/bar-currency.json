@@ -42,6 +42,9 @@
     },
     "min": 0
   },
+  "options": {
+    "show_values": true
+  },
   "_width": 64,
   "_height": 20
 }

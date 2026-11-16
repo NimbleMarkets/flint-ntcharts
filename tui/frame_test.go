@@ -9,13 +9,12 @@ import (
 	"github.com/NimbleMarkets/ntcharts/v2/spec"
 )
 
-const groupedDoc = `{
+// A pie chart, which only the raster renderer draws.
+const pieDoc = `{
   "renderer": "raster",
-  "data": {"values": [
-    {"c":"Laptop","n":3,"g":"USA"},{"c":"Phone","n":5,"g":"USA"},{"c":"Tablet","n":1,"g":"USA"},
-    {"c":"Laptop","n":2,"g":"China"},{"c":"Phone","n":4,"g":"China"},{"c":"Tablet","n":2,"g":"China"}]},
-  "chart_spec": {"chartType":"Grouped Bar Chart",
-    "encodings": {"x":{"field":"c"},"y":{"field":"n"},"group":{"field":"g"}}}
+  "data": {"values": [{"c":"Laptop","n":3},{"c":"Phone","n":5},{"c":"Tablet","n":2}]},
+  "chart_spec": {"chartType":"Pie Chart",
+    "encodings": {"color":{"field":"c"},"size":{"field":"n"}}}
 }`
 
 // raster draws nothing for a heatmap, which the text renderer does draw.
@@ -60,7 +59,7 @@ func hasCode(ws []envelope.Warning, code string) bool {
 
 func TestRenderFrameRasterDrawsAnImage(t *testing.T) {
 	r := newTestRunner(t)
-	f, err := RenderFrame(r, []byte(groupedDoc), 40, 12, FrameOptions{CellW: 8, CellH: 16})
+	f, err := RenderFrame(r, []byte(pieDoc), 40, 12, FrameOptions{CellW: 8, CellH: 16})
 	if err != nil {
 		t.Fatalf("RenderFrame: %v", err)
 	}
@@ -80,7 +79,7 @@ func TestRenderFrameRasterDrawsAnImage(t *testing.T) {
 // categories, with an overflow warning, so the raster compile gets pixels.
 func TestRenderFrameRasterLaysOutInPixelsNotCells(t *testing.T) {
 	r := newTestRunner(t)
-	f, err := RenderFrame(r, []byte(groupedDoc), 40, 12, FrameOptions{CellW: 8, CellH: 16})
+	f, err := RenderFrame(r, []byte(pieDoc), 40, 12, FrameOptions{CellW: 8, CellH: 16})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,9 +205,9 @@ func TestRendererOverrideDrawsARasterDocumentAsText(t *testing.T) {
 
 func TestRendererOverrideToTextExplainsWhenTextCannotDrawIt(t *testing.T) {
 	r := newTestRunner(t)
-	_, err := RenderFrame(r, []byte(groupedDoc), 40, 12, withRenderer("text"))
+	_, err := RenderFrame(r, []byte(pieDoc), 40, 12, withRenderer("text"))
 	if err == nil {
-		t.Fatal("want an error: the text renderer cannot draw grouped bars")
+		t.Fatal("want an error: the text renderer cannot draw a pie chart")
 	}
 	for _, want := range []string{"text renderer", "cannot", "raster"} {
 		if !strings.Contains(err.Error(), want) {

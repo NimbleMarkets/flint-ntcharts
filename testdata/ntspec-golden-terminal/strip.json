@@ -40,6 +40,9 @@
     "min": 9.25,
     "max": 25.75
   },
+  "options": {
+    "nice_ticks": true
+  },
   "_width": 64,
   "_height": 20
 }

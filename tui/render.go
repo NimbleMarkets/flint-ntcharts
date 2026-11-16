@@ -56,8 +56,6 @@ type renderedMsg struct {
 	gen      int
 }
 
-type viewer interface{ View() string }
-
 // renderDoc compiles/builds raw into a chart view sized w×h (the chart area,
 // status line already excluded by the caller). Errors return err with view
 // empty; the model decides what stays on screen.
@@ -133,15 +131,11 @@ func renderDoc(compiler Compiler, raw []byte, w, h int, opts FrameOptions) rende
 	if err := s.Validate(); err != nil {
 		return renderedMsg{err: err}
 	}
-	model, err := spec.Build(s)
+	view, err := FramedView(s, w, h)
 	if err != nil {
 		return renderedMsg{err: err}
 	}
-	v, ok := model.(viewer)
-	if !ok {
-		return renderedMsg{err: fmt.Errorf("chart model %T has no View", model)}
-	}
-	return renderedMsg{view: v.View(), warnings: warnings}
+	return renderedMsg{view: view, warnings: warnings}
 }
 
 // Render compiles and builds raw into a chart view sized to a w×h cell area,

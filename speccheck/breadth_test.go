@@ -55,7 +55,8 @@ func TestBreadthChartsDrawThroughTheRenderer(t *testing.T) {
 			"histogram",
 			`{"data":{"values":[{"v":1},{"v":2},{"v":2},{"v":3},{"v":3},{"v":3},{"v":4},{"v":4},{"v":5},{"v":9}]},
 			  "chart_spec":{"chartType":"Histogram","chartProperties":{"binCount":4},"encodings":{"x":{"field":"v"}}}}`,
-			[]string{"1–3", "7–9"},
+			// Bins are named by their starts, as on a numeric axis.
+			[]string{"1              3              5              7"},
 		},
 		{
 			"area",

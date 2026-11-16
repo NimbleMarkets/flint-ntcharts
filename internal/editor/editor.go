@@ -259,7 +259,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() tea.View {
 	title := titleStyle.Render("flint-edit") +
-		hintStyle.Render(fmt.Sprintf("   edit the spec, watch it render  ·  ctrl+n next example (or ctrl/alt+1-%d)  ·  ctrl+r renderer  ·  ctrl+g image mode  ·  ctrl+c quit", len(examples)))
+		hintStyle.Render(fmt.Sprintf("   edit the spec, watch it render  ·  ctrl+n next example (or ctrl/alt+1-%d)  ·  ctrl+r renderer  ·  ctrl+g image mode  ·  ctrl+c quit", min(9, len(examples))))
 
 	chart := m.pane.View()
 	if strings.TrimSpace(chart) == "" {
@@ -300,7 +300,7 @@ func (m model) statusLine() string {
 	return style.Render(msg) + strings.Repeat(" ", gap) + hintStyle.Render(label)
 }
 
-// cornerLabel is "3/9 · Candlestick Chart": the example loaded last and the
+// cornerLabel is "3/14 · Candlestick Chart": the example loaded last and the
 // chart type in the spec now, so it follows edits. "(edited)" marks a spec that
 // no longer matches the example it started as.
 func (m model) cornerLabel() string {

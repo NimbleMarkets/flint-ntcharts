@@ -67,7 +67,7 @@ describe("Area Chart", () => {
     expect(w?.message).toMatch(/fill/i);
   });
   it("keeps temporal x as a time series", () => {
-    const out = run("Area Chart", [{ x: "2026-01-01", y: 1 }, { x: "2026-02-01", y: 2 }], { x: { field: "x" }, y: { field: "y" } });
+    const out = run("Area Chart", [{ x: "2026-01-01", y: 1 }, { x: "2026-02-01", y: 2 }, { x: "2026-02-11", y: 3 }], { x: { field: "x" }, y: { field: "y" } });
     expect(out.type).toBe("timeseries");
   });
 });

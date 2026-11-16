@@ -108,7 +108,11 @@ describe("golden-terminal: sparkline", () => {
     expect(out.type).toBe("sparkline");
     expectWithinTerminalBase(out);
     expect(out.data.series).toHaveLength(1);
-    expect(out.data.series[0].values!.map((p: any) => p.y)).toEqual([3, 5, 2, 8, 6, 9, 4, 7]);
+    // Spread over the chart's width (one column per value), ends kept.
+    const ys = out.data.series[0].values!.map((p: any) => p.y);
+    expect(ys).toHaveLength(out.width);
+    expect(ys[0]).toBe(3);
+    expect(ys[ys.length - 1]).toBe(7);
     expectGolden("sparkline", out, "terminal");
   });
 });

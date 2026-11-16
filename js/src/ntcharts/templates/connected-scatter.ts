@@ -3,7 +3,7 @@ import { makeCartesianPivot } from "flint-chart/core";
 import { splitSeries } from "../series.js";
 import { toMs } from "../temporal.js";
 import type { NtInstantiateContext } from "../assemble.js";
-import { pinFittedYDomain } from "../domain.js";
+import { pinFittedYDomain, pinZeroBaseline } from "../domain.js";
 
 // A connected scatter plot is a path: points are joined in the order channel's
 // order (or row order), not sorted by x like a line chart. The spec's line
@@ -21,7 +21,7 @@ export const ntConnectedScatterDef: ChartTemplateDef = {
     emit.y_axis = { ...emit.y_axis, title: cs.y?.field };
     if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
     if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
-    if (cs.y?.zero?.zero) emit.y_axis.min = 0;
+    if (cs.y?.zero?.zero) pinZeroBaseline(emit, cs, table);
     else pinFittedYDomain(emit, cs, table);
 
     let rows = table;

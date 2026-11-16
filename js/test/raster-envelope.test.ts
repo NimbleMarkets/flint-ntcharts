@@ -87,8 +87,11 @@ describe("the text path, without a renderer", () => {
   });
 
   it("points an unsupported chart type at the raster renderer", () => {
-    const env = compile(grouped());
-    expect(env.error.message).toMatch(/Unknown chart type "Grouped Bar Chart"/);
+    const env = compile(JSON.stringify({
+      data: { values: [{ c: "a", n: 3 }, { c: "b", n: 5 }] },
+      chart_spec: { chartType: "Pie Chart", encodings: { color: { field: "c" }, size: { field: "n" } } },
+    }));
+    expect(env.error.message).toMatch(/Unknown chart type "Pie Chart"/);
     expect(env.error.message).toContain('"renderer": "raster"');
   });
 });

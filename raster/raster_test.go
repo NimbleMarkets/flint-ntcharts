@@ -3,6 +3,7 @@ package raster
 import (
 	"encoding/json"
 	"errors"
+	"github.com/go-analyze/charts"
 	"os"
 	"testing"
 )
@@ -78,6 +79,26 @@ func TestSanitize(t *testing.T) {
 			t.Fatalf("changed: %s", got)
 		}
 	})
+	t.Run("rounds the fractional sizes flint 1.1 emits, never data", func(t *testing.T) {
+		in := `{"xAxis":[{"axisLabel":{"fontSize":6.5}}],"grid":{"left":40.4},"series":[{"type":"line","symbolSize":2.6,"data":[[1.5,2.5]]}]}`
+		got := decode(t, Sanitize([]byte(in)))
+		if f := got["xAxis"].([]any)[0].(map[string]any)["axisLabel"].(map[string]any)["fontSize"]; f != float64(7) {
+			t.Fatalf("fontSize = %v", f)
+		}
+		if l := got["grid"].(map[string]any)["left"]; l != float64(40) {
+			t.Fatalf("grid.left = %v", l)
+		}
+		s := got["series"].([]any)[0].(map[string]any)
+		if s["symbolSize"] != float64(3) {
+			t.Fatalf("symbolSize = %v", s["symbolSize"])
+		}
+		if p := s["data"].([]any)[0].([]any); p[0] != 1.5 || p[1] != 2.5 {
+			t.Fatalf("data = %v", p)
+		}
+		if _, err := Render([]byte(`{"xAxis":[{"type":"category","data":["a","b"],"axisLabel":{"fontSize":6.5}}],"yAxis":[{"type":"value"}],"series":[{"type":"bar","data":[3,5]}]}`), 320, 200); err != nil {
+			t.Fatalf("Render: %v", err)
+		}
+	})
 	t.Run("drops a leading category name, keeping the values", func(t *testing.T) {
 		in := `{"series":[{"type":"bar","data":[["Q1",5],["Q2",7]]}]}`
 		data := decode(t, Sanitize([]byte(in)))["series"].([]any)[0].(map[string]any)["data"].([]any)
@@ -149,5 +170,77 @@ func TestRenderReportsBadOptions(t *testing.T) {
 func TestRenderRejectsDegenerateSizes(t *testing.T) {
 	if _, err := Render(fixture(t, "grouped-bar"), 0, 0); err == nil {
 		t.Fatal("expected an error for a zero size")
+	}
+}
+
+func TestSmallAxisValuesStayDistinct(t *testing.T) {
+	seen := map[string]bool{}
+	for i := 0; i <= 6; i++ {
+		s := formatValue(0.002 * float64(i))
+		if seen[s] {
+			t.Fatalf("%v prints %q, as a smaller tick does", 0.002*float64(i), s)
+		}
+		seen[s] = true
+	}
+	for v, want := range map[float64]string{0.012: "0.012", -0.0085: "-0.0085", 0.25: "0.25", 1500: "1.5k", 12.345: "12.35"} {
+		if got := formatValue(v); got != want {
+			t.Errorf("formatValue(%v) = %q, want %q", v, got, want)
+		}
+	}
+}
+
+func TestSanitizeStacksTheLegendUnderTheTitle(t *testing.T) {
+	var o map[string]any
+	in := `{"title":{"text":"T","top":15,"textStyle":{"fontSize":18,"lineHeight":23}},"legend":{"right":10,"orient":"vertical"},"series":[]}`
+	if err := json.Unmarshal(Sanitize([]byte(in)), &o); err != nil {
+		t.Fatal(err)
+	}
+	title, legend := o["title"].(map[string]any), o["legend"].(map[string]any)
+	if _, ok := title["top"]; ok {
+		t.Fatalf("title keeps its offset: %v", title)
+	}
+	if legend["top"] != 35.0 || legend["orient"] != "horizontal" {
+		t.Fatalf("legend = %v, want a row at top 35 (a title line and a gap)", legend)
+	}
+}
+
+func TestSanitizeHidesALegendFlintDidNotAskFor(t *testing.T) {
+	var o map[string]any
+	in := `{"series":[{"type":"scatter","data":[[1,2]]},{"type":"line","name":"Trend","data":[[1,2]]}]}`
+	if err := json.Unmarshal(Sanitize([]byte(in)), &o); err != nil {
+		t.Fatal(err)
+	}
+	if lg, _ := o["legend"].(map[string]any); lg["show"] != false {
+		t.Fatalf("legend = %v, want hidden", o["legend"])
+	}
+}
+
+func TestBreatheRoundsPinnedValueAxes(t *testing.T) {
+	lo, hi := 3062.0, 6088.0
+	opt := charts.ChartOption{YAxis: []charts.YAxisOption{{Min: &lo, Max: &hi}, {}}}
+	breathe(&opt)
+	pinned, free := opt.YAxis[0], opt.YAxis[1]
+	if *pinned.Min != 3000 || *pinned.Max != 7000 || pinned.LabelCount != 5 {
+		t.Fatalf("pinned axis = %v..%v with %d labels, want 3000..7000 every 1000", *pinned.Min, *pinned.Max, pinned.LabelCount)
+	}
+	if free.LabelCountAdjustment >= 0 {
+		t.Fatalf("a free axis should ask for fewer labels, got %d", free.LabelCountAdjustment)
+	}
+	if opt.Padding.Top == 0 || opt.Padding.Right <= opt.Padding.Left {
+		t.Fatalf("padding = %+v", opt.Padding)
+	}
+}
+
+func TestSanitizeKeepsABottomLegendAtTheBottom(t *testing.T) {
+	var o map[string]any
+	in := `{"title":{"text":"T","top":15},"legend":{"bottom":0,"left":"center"},"series":[]}`
+	if err := json.Unmarshal(Sanitize([]byte(in)), &o); err != nil {
+		t.Fatal(err)
+	}
+	if lg := o["legend"].(map[string]any); lg["top"] != "bottom" {
+		t.Fatalf("legend = %v, want top: bottom (go-analyze ignores bottom)", lg)
+	}
+	if o["title"].(map[string]any)["top"] != 15.0 {
+		t.Fatal("a title over a bottom legend keeps its place")
 	}
 }

@@ -43,10 +43,36 @@ export function isKnownScheme(scheme: string): boolean {
   return scheme in CATEGORICAL || scheme in SEQUENTIAL;
 }
 
+/** Series inks of a Flint theme (theme_spec), which replace the default schemes. */
+export interface ThemeInks {
+  categorical?: string[];
+  single?: string;
+  sequential?: string[];
+  diverging?: string[];
+}
+
+let theme: ThemeInks | undefined;
+
+/** Run `fn` with a Flint theme's inks in force, as assembly does for one chart. */
+export function withThemeInks<T>(inks: ThemeInks | undefined, fn: () => T): T {
+  const previous = theme;
+  theme = inks;
+  try {
+    return fn();
+  } finally {
+    theme = previous;
+  }
+}
+
+const DIVERGING = new Set(["redblue", "blueorange"]);
+
 export function paletteForScheme(scheme: string | undefined): string[] {
+  if (theme?.categorical?.length) return theme.categorical;
   return CATEGORICAL[scheme ?? ""] ?? CATEGORICAL.tableau10;
 }
 
 export function gradientForScheme(scheme: string | undefined): string[] {
+  const themed = DIVERGING.has(scheme ?? "") ? theme?.diverging : theme?.sequential;
+  if (themed?.length) return themed;
   return SEQUENTIAL[scheme ?? ""] ?? SEQUENTIAL.viridis;
 }

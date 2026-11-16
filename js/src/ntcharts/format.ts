@@ -51,3 +51,26 @@ export function d3TimeToGoLayout(d3fmt: string, warn: Warn): string {
   }
   return out;
 }
+
+// valueText prints a value as ntcharts prints a bar's value label
+// (spec.FormatValue with the axis format, else spec.compactValue), so a
+// template can tell whether the labels fit before asking for them.
+export function valueText(v: number, fmt?: NtFormat): string {
+  const fixed = (x: number, prec: number | undefined) => (prec == null || prec < 0 ? String(x) : x.toFixed(prec));
+  const si = (x: number, prec: number) => {
+    for (const [f, s] of [[1e12, "T"], [1e9, "G"], [1e6, "M"], [1e3, "k"]] as const) {
+      if (Math.abs(x) >= f) return (x / f).toFixed(prec) + s;
+    }
+    return x.toFixed(prec);
+  };
+  if (!fmt || (!fmt.kind && fmt.precision == null && !fmt.currency)) {
+    if (Math.abs(v) >= 1000) return si(v, 1).replace(".0", "");
+    return String(Number(v.toPrecision(3)));
+  }
+  switch (fmt.kind) {
+    case "percent": return (v * 100).toFixed(fmt.precision ?? 0) + "%";
+    case "currency": return (fmt.currency || "$") + v.toFixed(fmt.precision ?? 2);
+    case "si": return si(v, fmt.precision == null || fmt.precision < 0 ? 1 : fmt.precision);
+    default: return fixed(v, fmt.precision);
+  }
+}

@@ -16,6 +16,13 @@ import { ntHistogramDef } from "./histogram.js";
 import { ntAreaChartDef } from "./area.js";
 import { ntLollipopChartDef } from "./lollipop.js";
 import { ntCalendarHeatmapDef } from "./calendar-heatmap.js";
+import { ntGroupedBarChartDef } from "./grouped-bar.js";
+import { ntPyramidChartDef } from "./pyramid.js";
+import { ntDensityPlotDef } from "./density.js";
+import { ntRangeAreaChartDef } from "./range-area.js";
+import { ntStreamgraphDef } from "./streamgraph.js";
+import { ntRangedDotPlotDef } from "./ranged-dot.js";
+import { ntRegressionDef } from "./regression.js";
 
 const defs: ChartTemplateDef[] = [];
 
@@ -45,3 +52,11 @@ ntRegister(ntComboChartDef);
 
 ntRegister(ntSlopeChartDef);
 ntRegister(ntStripPlotDef);
+
+ntRegister(ntGroupedBarChartDef);
+ntRegister(ntPyramidChartDef);
+ntRegister(ntDensityPlotDef);
+ntRegister(ntRangeAreaChartDef);
+ntRegister(ntStreamgraphDef);
+ntRegister(ntRangedDotPlotDef);
+ntRegister(ntRegressionDef);

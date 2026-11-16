@@ -13,6 +13,8 @@ export interface NtXAxis {
   title?: string;
   type?: "category" | "time" | "value";
   labels?: string[];
+  /** Text drawn under each category in place of `labels`; "" draws nothing. */
+  tick_labels?: string[];
   format?: NtFormat;
   scale?: "linear" | "log";
 }
@@ -47,6 +49,8 @@ export interface NtSeries {
   values?: NtDataPoint[];
   ohlc?: NtOHLCPoint[];
   color?: string;
+  /** The one-cell rune a scatter series draws its points with. */
+  symbol?: string;
   y_axis?: "left" | "right"; // local ntcharts dual-Y support
 }
 
@@ -63,6 +67,14 @@ export interface NtOptions {
   show_grid?: boolean;
   orientation?: "vertical" | "horizontal";
   stacked?: boolean;
+  /** Print each bar's value at its end. */
+  show_values?: boolean;
+  /** A dashed line at Y = 0 when the Y range crosses it. */
+  zero_line?: boolean;
+  /** Label linear value axes with round values and widen Y to whole ticks. */
+  nice_ticks?: boolean;
+  /** Where a framing host should put the legend. */
+  legend_position?: "top" | "bottom" | "none";
   candle_style?: "line" | "block";
 }
 

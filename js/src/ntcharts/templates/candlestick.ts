@@ -24,6 +24,12 @@ export const ntCandlestickChartDef: ChartTemplateDef = {
   instantiate: (_spec: any, rawCtx: any) => {
     const ctx = rawCtx as NtInstantiateContext;
     const { emit, channelSemantics: cs, table } = ctx;
+    // One candle per date: several instruments (a facet) would be drawn as one.
+    const facets = [cs.column, cs.row].filter(Boolean).map((f) => f!.field);
+    if (facets.length) {
+      throw new Error(`A terminal Candlestick Chart draws one instrument; it is faceted by ${facets.join(" and ")}. ` +
+        `Filter the rows to one ${facets[0]}.`);
+    }
     emit.type = "ohlc";
 
     const xField = cs.x!.field;

@@ -16,7 +16,8 @@
             "y": 33.1
           }
         ],
-        "color": "#4e79a7"
+        "color": "#4e79a7",
+        "symbol": "•"
       },
       {
         "name": "USA",
@@ -34,7 +35,8 @@
             "y": 16.5
           }
         ],
-        "color": "#f28e2c"
+        "color": "#f28e2c",
+        "symbol": "×"
       },
       {
         "name": "Germany",
@@ -44,7 +46,8 @@
             "y": 27.8
           }
         ],
-        "color": "#e15759"
+        "color": "#e15759",
+        "symbol": "+"
       }
     ]
   },
@@ -58,7 +61,8 @@
     "max": 33.93
   },
   "options": {
-    "show_legend": true
+    "show_legend": true,
+    "nice_ticks": true
   },
   "_width": 400,
   "_height": 300

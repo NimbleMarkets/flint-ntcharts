@@ -51,7 +51,8 @@
   },
   "options": {
     "stacked": true,
-    "show_legend": true
+    "show_legend": true,
+    "show_values": true
   },
   "_width": 64,
   "_height": 20

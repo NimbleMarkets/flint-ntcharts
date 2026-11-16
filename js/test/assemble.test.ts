@@ -199,7 +199,8 @@ describe("assemble: logScale chart property", () => {
   });
 
   it("time series: Y is honoured, X (time) is reported", () => {
-    const dated = grow.map((r, i) => ({ d: `2026-0${i + 1}-01`, y: r.y }));
+    // Irregular dates: a regular cadence would be drawn on date slots.
+    const dated = grow.map((r, i) => ({ d: `2026-0${i + 1}-${String(1 + (i % 3) * 5).padStart(2, "0")}`, y: r.y }));
     const enc = { x: { field: "d" }, y: { field: "y" } };
     const y = make("Line Chart", { logScale_y: true }, dated, enc);
     expect(y.type).toBe("timeseries");

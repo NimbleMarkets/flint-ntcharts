@@ -48,7 +48,8 @@
     "max": 31
   },
   "options": {
-    "show_legend": true
+    "show_legend": true,
+    "nice_ticks": true
   },
   "_width": 64,
   "_height": 20
